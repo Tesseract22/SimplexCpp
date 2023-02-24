@@ -1,6 +1,5 @@
 // inequalities
 // target
-#include <array>
 
 /**
  * @brief Solve Linear Programming problem with simplex method
@@ -10,7 +9,7 @@
  * @param ineq_rhs the right hand side constant of the restraints as a n vector
  * @return int 
  */
-int LinearProgrammingSolver(float object[n], float ineq_lhs[m][n], float ineq_rhs[n]);
+int LinearProgrammingSolver(int m, int n, float* object, float** ineq_lhs, float* ineq_rhs);
 
 
 /**
@@ -27,4 +26,4 @@ float** ToTableau(int m, int n, float* object, float** ineq_lhs, float* ineq_rhs
 
 
 
-#include "Simplex.hpp"
+// #include "Simplex.hpp"

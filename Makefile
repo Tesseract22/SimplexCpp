@@ -7,10 +7,10 @@ simplex: bin/simplex
 
 
 
-bin/simplex: src/main.cc src/Simplex.cc
+bin/simplex: src/*
 	${CXX} ${CXX_FLAGS} $^ -o $@
 
-bin/simplex-release: src/main.cc src/Simplex.cc
+bin/simplex-release: src/*
 	${CXX} -std=c++2a $^ -o $@
 
 .DEFAULT_GOAL := simplex
