@@ -22,5 +22,6 @@ int main() {
     (void)res;
 
     Matrix<float, 3, 2> m;
+    m.debugPrint();
     return 0;
 }

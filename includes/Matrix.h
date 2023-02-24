@@ -1,16 +1,19 @@
+#pragma once
 
 template<typename T, int M, int N>
 class Matrix {
 
 public:
     Matrix() {
-        array = new T[M * N];
+        arr_ = new T[M * N];
     }
+
+    Matrix(T** arr);
 
 
 
     T& get(int row, int col) {
-        return array[index(row, col)];
+        return arr_[index(row, col)];
     }
 
     void debugPrint();
@@ -23,5 +26,7 @@ private:
         return row * N + col;
     }
     
-    T* array;
+    T* arr_;
 };
+
+#include "Matrix.hpp"
