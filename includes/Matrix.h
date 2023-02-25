@@ -16,21 +16,25 @@ public:
     /**
      * retunrs a reference at the given location
     */
-    T& get(int row, int col) {
+    T& get(size_t row, size_t col) {
         return arr_[index(row, col)];
     }
 
-    T& at(int row, int col) const {
+    T& at(size_t row, size_t col) const {
         return arr_[index(row, col)];
     }
 
     void debugPrint();
 
+    void rowAddition(size_t dest_row, size_t other_row);
+
+    void rowMultiplication(size_t row, float factor);
+
     
 
 
 private:
-    unsigned index(int row, int col) const {
+    size_t index(size_t row, size_t col) const {
         return row * N + col;
     }
     
