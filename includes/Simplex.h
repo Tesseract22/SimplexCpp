@@ -1,5 +1,6 @@
 #pragma once
-
+#include <array>
+#include <Matrix.h>
 // inequalities
 // target
 
@@ -24,8 +25,9 @@ int LinearProgrammingSolver(int m, int n, float* object, float** ineq_lhs, float
  * @param ineq_rhs 
  * @return float** 
  */
-float** ToTableau(int m, int n, float* object, float** ineq_lhs, float* ineq_rhs);
+template <unsigned long M, unsigned long N>
+Matrix<float, M + 1, N + M + 2>  ToTableau(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs);
 
 
 
-// #include "Simplex.hpp"
+#include "Simplex.hpp"

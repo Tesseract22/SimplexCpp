@@ -1,6 +1,6 @@
 #pragma once
 
-template<typename T, int M, int N>
+template<typename T, unsigned long M, unsigned long N>
 class Matrix {
 
 public:
@@ -8,11 +8,19 @@ public:
         arr_ = new T[M * N];
     }
 
-    Matrix(T** arr);
+    Matrix(T (&arr)[M][N]);
+
+    ~Matrix();
 
 
-
+    /**
+     * retunrs a reference at the given location
+    */
     T& get(int row, int col) {
+        return arr_[index(row, col)];
+    }
+
+    T& at(int row, int col) const {
         return arr_[index(row, col)];
     }
 
@@ -22,7 +30,7 @@ public:
 
 
 private:
-    unsigned index(int row, int col) {
+    unsigned index(int row, int col) const {
         return row * N + col;
     }
     
