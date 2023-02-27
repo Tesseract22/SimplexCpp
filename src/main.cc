@@ -25,7 +25,8 @@ int main() {
         {3,3,3,3,4,4,4,4,5},
     };
     Matrix<float, 3, 9> m(ineq);
-    m.rowAddition(0, 1, -2);
+    m.rowAddition(0, 1, -2.5);
+    m.rowMultiplication(0, 2);
     m.debugPrint();
     return 0;
 }
