@@ -15,7 +15,8 @@ void Matrix<T, M, N>::debugPrint() {
 
 template<typename T, unsigned long M, unsigned long N>
 Matrix<T, M, N>::Matrix(T (&arr)[M][N]) {
-    arr_ = new T[M * N];
+    align_col_ = (N + PADDING - 1) / PADDING * PADDING;
+    arr_ = new T[M * align_col_];
     for (size_t i = 0;i < M; ++i) {
         for (size_t j = 0; j < N; ++j) {
             arr_[index(i,j)] = arr[i][j];
@@ -31,13 +32,19 @@ Matrix<T, M, N>::~Matrix() {
 
 
 template<typename T, unsigned long M, unsigned long N>
-void Matrix<T, M, N>::rowAddition(size_t dest_row, size_t other_row) {
+void Matrix<T, M, N>::rowAddition(size_t dest_row, size_t other_row, float mul) {
+    if (mul == 0) return;
     size_t j;
-    for (j = 0; j < N; j += 4) {
-         __m128 dest_vec = _mm_load_ps(arr_ + dest_row * N);
-         __m128 other_vec = _mm_load_ps(arr_ + other_row * N);
-         __m128 result_vec = _mm_add_ps(dest_vec, other_vec);
-         _mm_store_ps(arr_ + dest_row * N, result_vec);
+    __m128 mul_vec = _mm_set1_ps(mul);
+    for (j = 0; j < N / 4 * 4; j += 4) {
+        cout << j <<  ' ' << index(other_row, j) << endl;
+         __m128 dest_vec = _mm_load_ps(arr_ + index(dest_row, j));
+         __m128 other_vec = _mm_load_ps(arr_ + index(other_row, j));
+         __m128 result_vec = _mm_add_ps(dest_vec, _mm_mul_ps(other_vec, mul_vec));
+         _mm_store_ps(arr_ + index(dest_row, j), result_vec);
+    }
+    for (; j < N; ++j) {
+        arr_[index(dest_row, j)] += arr_[index(other_row, j)] * mul;
     }
    
 }

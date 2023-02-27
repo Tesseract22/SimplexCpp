@@ -7,11 +7,11 @@ simplex: bin/simplex
 
 
 
-bin/simplex: src/*
-	${CXX} ${CXX_FLAGS} $^ -o $@
+bin/simplex: src/* includes/*
+	${CXX} ${CXX_FLAGS} src/* -o $@
 
-bin/simplex-release: src/*
-	${CXX} -std=c++2a $^ -o $@
+bin/simplex-release: src/* 
+	${CXX} -std=c++2a src/* -o $@
 
 .DEFAULT_GOAL := simplex
 .PHONY: clean simplex 
