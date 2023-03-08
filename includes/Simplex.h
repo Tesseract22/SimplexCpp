@@ -25,6 +25,12 @@ int LinearProgrammingSolver(int m, int n, float* object, float** ineq_lhs, float
  * @param ineq_rhs 
  * @return float** 
  */
+typedef struct Solution {
+    float res;
+    bool success;
+} Solution;
+
+
 template <size_t M, size_t N>
 Matrix<float, M + 1, N + M + 2>  ToTableau(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs);
 
@@ -36,8 +42,10 @@ template <size_t M, size_t N>
 size_t getPivotRow(const Matrix<float, M + 1, N + M + 2>& m, size_t pivot_col);
 
 template <size_t M, size_t N>
-void pivotMatrix(const Matrix<float, M + 1, N + M + 2>& m, size_t pivot_row, size_t pivot_col);
+void pivotMatrix(Matrix<float, M + 1, N + M + 2>& m, size_t pivot_row, size_t pivot_col);
 
+template <size_t M, size_t N>
+Solution solveLP(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs);
 
 
 #include "Simplex.hpp"
