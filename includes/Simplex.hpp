@@ -3,22 +3,24 @@
 
 
 template <unsigned long M, unsigned long N>
-Matrix<float, M + 1, N + M + 2> ToTableau(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs) {\
-    (void)object; (void)ineq_rhs;
-    Matrix<float, M + 1, N + M + 2> result;
+Matrix<float, M + 1, N + M + 2> ToTableau(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs) {
+    Matrix<float, M + 1, N + M + 2> res;
     for (size_t i = 0; i < M; ++i) {
         for (size_t j = 0; j < N; ++j) {
-            result.get(i, j) = ineq_lhs.at(i, j);
+            res.get(i, j) = ineq_lhs.at(i, j);
+            if (ineq_lhs.at(i, j) != 0) {
+
+            }
         }
-        result.get(i, N + i) = 1;
-        result.get(i, N + M + 1) = ineq_rhs[i];
+        res.get(i, N + i) = 1;
+        res.get(i, N + M + 1) = ineq_rhs[i];
     }
     for (size_t j = 0; j < N; ++j) {
-        result.get(M, j) = -object[j];
+        res.get(M, j) = -object[j];
     }
-    result.get(M, N + M) = 1;
+    res.get(M, N + M) = 1;
 
-    return result;
+    return res;
 }
 
 
@@ -67,20 +69,40 @@ void pivotMatrix(Matrix<float, M + 1, N + M + 2>& m, size_t pivot_row, size_t pi
 
 template <size_t M, size_t N>
 Solution solveLP(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs) {
-    Matrix<float, M + 1, N + M + 2> t = ToTableau(object, ineq_lhs, ineq_rhs);
+    Matrix<float, M + 1, N + M + 2> res = ToTableau<M, N>(object, ineq_lhs, ineq_rhs);
     Solution s;
     s.success = false;
     while (true) {
-        auto pivot_col = getPivotCol<M, N>(t);
+        auto pivot_col = getPivotCol<M, N>(res);
         if (pivot_col == N + M + 2) {
             s.success = true;
+            s.variables.resize(N);
+            std::array<float, N> var_arr;
+            std::array<size_t, N> count_arr;
+            count_arr.fill(0);
+            for (size_t i = 0; i < M; ++i) {
+                for (size_t j = 0; j < N; j++) {
+                    if (res.at(i, j) != 0) {
+                        count_arr[j]++;
+                        var_arr[j] = i;
+                    }
+                }
+            }
+            for (size_t j = 0; j < N; j++) {
+                if (count_arr[j] == 1) {
+                    s.variables.at(j) = res.at(var_arr[j], N + M + 1);
+                }
+            }
+
+            
+            
             return s;
         }
-        auto pivot_row = getPivotRow<M, N>(t, pivot_col);
+        auto pivot_row = getPivotRow<M, N>(res, pivot_col);
         if (pivot_row == M + 1) {
             return s;
         }
-        pivotMatrix<M, N>(t, pivot_row, pivot_col);
-        s.res = t.at(M , N + M + 1);
+        pivotMatrix<M, N>(res, pivot_row, pivot_col);
+        s.res = res.at(M , N + M + 1);
     }
 }

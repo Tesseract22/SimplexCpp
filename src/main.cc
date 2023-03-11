@@ -24,6 +24,6 @@ int main() {
 
     // cout << pivot_col << ' '<< pivot_row << endl;
     // pivotMatrix<M, N>(t, pivot_row, pivot_col);
-    cout << solveLP<M, N>(obj, l, ineq_rhs).res << endl;
+    cout << solveLP<M, N>(obj, l, ineq_rhs) << endl;
     return 0;
 }

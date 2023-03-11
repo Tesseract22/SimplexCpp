@@ -1,6 +1,8 @@
 #pragma once
 #include <array>
 #include <Matrix.h>
+#include <vector>
+#include <iostream>
 // inequalities
 // target
 
@@ -25,14 +27,28 @@ int LinearProgrammingSolver(int m, int n, float* object, float** ineq_lhs, float
  * @param ineq_rhs 
  * @return float** 
  */
-typedef struct Solution {
+struct Solution {
     float res;
     bool success;
-} Solution;
+    vector<float> variables;
+    friend std::ostream& operator<<(std::ostream& stream, const Solution& s) {
+        stream << "Success: " << s.success << std::endl;
+        stream << "Result: " << s.res << std::endl;
+        for (size_t i = 0; i < s.variables.size(); ++i) {
+            stream << "x" << i << ": " << s.variables[i] << ' ';
+        }
+        stream << std::endl;
+        return stream;
+    }
+};
+
+
+
+
 
 
 template <size_t M, size_t N>
-Matrix<float, M + 1, N + M + 2>  ToTableau(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs);
+Matrix<float, M + 1, N + M + 2> ToTableau(const std::array<float, N>& object,  const Matrix<float, M, N>& ineq_lhs, const std::array<float, M>& ineq_rhs);
 
 
 template <size_t M, size_t N>
