@@ -1,20 +1,25 @@
-CXX=g++
-CXX_FLAGS=-std=c++2a -g -O0 -Iincludes -Wall -Wextra -Werror
+CXX=g++ -std=c++2a -Iincludes
+DEBUG=-g -O0 -Wall -Wextra -Werror
+RELEASE=-O3
+OBJ_FLASG=-c
+ENTRY=entry/main.cc
+ENTRY_OBJ=objs/entry.o
+# https://isocpp.org/wiki/faq/templates#templates-defn-vs-decl
 # SAN = -fsanitize=address,null -fno-omit-frame-pointer
 
-release: bin/simplex-release
-simplex: bin/simplex
+release: bin/simplex
+simplex: bin/simplex-debug
 
 
 
-bin/simplex: src/* includes/*
-	${CXX} ${CXX_FLAGS} src/* -o $@
+bin/simplex-debug: src/*
+	${CXX} ${DEBUG} -o $@ $^
+bin/simplex: src/*
+	${CXX} ${RELEASE} -o $@ $^
 
-bin/simplex-release: src/* 
-	${CXX} -std=c++2a src/* -o $@
 
-.DEFAULT_GOAL := simplex
-.PHONY: clean simplex 
+.DEFAULT_GOAL := release
+.PHONY: clean simplex lib
 
 clean:
-	rm simplex simplex-release
+	rm bin/*
