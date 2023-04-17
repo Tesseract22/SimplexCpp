@@ -1,0 +1,7 @@
+g++
+-Iincludes
+-std=c++2a
+-Wall
+-Wextra
+-Werror
+-DUSE_EXPORT_KEYWORD 
