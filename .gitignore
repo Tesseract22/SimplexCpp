@@ -2,3 +2,6 @@ bin/*
 objs/*
 *.vscode/*
 header.py
+data/
+game/
+*.lua

@@ -91,6 +91,7 @@ Matrix<T, 1, N>::Matrix(const std::string &path) {
       break;
     bytes_read += bytes;
   };
+  std::cout << bytes_read << std::endl;
 
   if (f)
     fclose(f);
