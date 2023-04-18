@@ -1,7 +1,10 @@
 #pragma once
 #include "Matrix.h"
+#include <cerrno>
 #include <cstddef>
+#include <cstdio>
 #include <initializer_list>
+#include <stdexcept>
 
 template <typename T, size_t N> using Array = Matrix<T, 1, N>;
 template <typename T, size_t N> class Matrix<T, 1, N> {
@@ -33,15 +36,13 @@ public:
 
   void arrayMultiplication(T factor);
 
-  bool save(const std::string &path);
+  size_t save(const std::string &path);
 
 private:
   inline size_t index(size_t col) const { return col; }
   T arr_[ALIGN_COL(N)] = {};
 };
 
-#include <iostream>
-#include <xmmintrin.h>
 template <typename T, size_t N>
 Matrix<T, 1, N>::Matrix(std::initializer_list<T> list) {
   size_t col = 0;
@@ -53,19 +54,43 @@ Matrix<T, 1, N>::Matrix(std::initializer_list<T> list) {
 }
 
 template <typename T, size_t N>
-Matrix<T, 1, N>::Matrix(const std::string &path) {
-  (void)path;
-  FILE *f = fopen(path.data(), "rb");
+size_t Matrix<T, 1, N>::save(const std::string &path) {
+  FILE *f = fopen(path.data(), "wb+");
+  if (!f)
+    throw std::runtime_error("cannot open file: " + path);
+  size_t bytes_to_write = 1 * ALIGN_COL(N) * sizeof(T);
+  size_t bytes_written = 0;
+  ssize_t bytes;
+  while (bytes_written < bytes_to_write) {
+    bytes = fwrite((char *)arr_ + bytes_written, 1,
+                   bytes_to_write - bytes_written, f);
+    if (bytes < 0)
+      throw std::runtime_error("cannot write to file: " + path);
+    bytes_written += bytes;
+  }
+  if (f)
+    fclose(f);
+  return bytes_written;
+}
 
-  // SIMPLEX_DEFER_FUNC(
-  //     size_t bytes_to_written = M * N * sizeof(T);
-  //     size_t bytes_wriiten = 0;
-  //     ssize_t bytes;
-  //     while ((bytes = fread(arr_, 1024, 1, f)) > 0 ) {
-  //         if (bytes < 0)
-  //         bytes_wriiten += bytes;
-  //     };
-  // )
+template <typename T, size_t N>
+Matrix<T, 1, N>::Matrix(const std::string &path) {
+  FILE *f = fopen(path.data(), "rb");
+  if (!f)
+    throw std::runtime_error("cannot open file: " + path);
+  size_t bytes_to_read = 1 * ALIGN_COL(N) * sizeof(T);
+  size_t bytes_read = 0;
+  ssize_t bytes;
+  while (feof(f) == 0) {
+    bytes = fread((char *)arr_ + bytes_read, 1, bytes_to_read - bytes_read, f);
+    // std::cout << *(size_t *)arr_;
+    if (bytes == -1) {
+      throw std::runtime_error("failed to read file: " + path);
+    }
+    if (bytes == 0)
+      break;
+    bytes_read += bytes;
+  };
 
   if (f)
     fclose(f);

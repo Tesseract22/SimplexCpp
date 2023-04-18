@@ -1,4 +1,6 @@
 #pragma once
+#include <bits/types/FILE.h>
+#include <cerrno>
 #include <cstddef>
 #include <cstdio>
 #include <initializer_list>
@@ -7,6 +9,21 @@
 #define PADDING 4
 #define ALIGN_COL(N) (((N + PADDING - 1) / PADDING * PADDING))
 
+#define DEFER_RETURN_VAL(value)                                                \
+  do {                                                                         \
+    result = value;                                                            \
+    goto defer_return;                                                         \
+  } while (0);
+#define DEFER_RETURN_VOID goto defer_return
+#define DEFER_POINT                                                            \
+  defer_return:
+
+// ssize_t readData(FILE* f, void* buffer) {
+//   const static block_size = 1024;
+//   while (feof(f) == 0) {
+//     size_t bytes_read = fread(buffer, 1, block_size, f);
+//   }
+// }
 template <typename T, size_t M, size_t N> class Matrix {
 
 public:
@@ -40,7 +57,7 @@ public:
 
   void rowMultiplication(size_t row, T factor);
 
-  bool save(const std::string &path);
+  size_t save(const std::string &path);
 
 private:
   size_t index(size_t row, size_t col) const {
@@ -54,21 +71,43 @@ private:
 
 template <typename T, size_t M, size_t N>
 Matrix<T, M, N>::Matrix(const std::string &path) {
-  (void)path;
   FILE *f = fopen(path.data(), "rb");
-
-  // SIMPLEX_DEFER_FUNC(
-  //     size_t bytes_to_written = M * N * sizeof(T);
-  //     size_t bytes_wriiten = 0;
-  //     ssize_t bytes;
-  //     while ((bytes = fread(arr_, 1024, 1, f)) > 0 ) {
-  //         if (bytes < 0)
-  //         bytes_wriiten += bytes;
-  //     };
-  // )
+  if (!f)
+    throw std::runtime_error("cannot open file: " + path);
+  size_t bytes_to_read = M * ALIGN_COL(N) * sizeof(T);
+  size_t bytes_read = 0;
+  ssize_t bytes;
+  while (feof(f) == 0) {
+    bytes = fread(arr_, 1, bytes_to_read - bytes_read, f);
+    if (bytes == -1) {
+      throw std::runtime_error("failed to read file: " + path);
+    }
+    bytes_read += bytes;
+    if (bytes == 0)
+      break;
+  };
 
   if (f)
     fclose(f);
+}
+template <typename T, size_t M, size_t N>
+size_t Matrix<T, M, N>::save(const std::string &path) {
+  FILE *f = fopen(path.data(), "wb+");
+  if (!f)
+    throw std::runtime_error("cannot open file: " + path);
+  size_t bytes_to_write = M * ALIGN_COL(N) * sizeof(T);
+  size_t bytes_written = 0;
+  ssize_t bytes;
+  while (bytes_written < bytes_to_write) {
+    bytes = fwrite((char *)arr_ + bytes_written, 1,
+                   bytes_to_write - bytes_written, f);
+    if (bytes < 0)
+      throw std::runtime_error("cannot write to file: " + path);
+    bytes_written += bytes;
+  }
+  if (f)
+    fclose(f);
+  return bytes_written;
 }
 
 template <typename T, size_t M, size_t N>
