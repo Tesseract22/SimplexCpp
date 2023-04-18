@@ -9,14 +9,15 @@ ENTRY_OBJ=objs/entry.o
 
 release: bin/simplex
 simplex: bin/simplex-debug
+lib: static/SimplexLP.hpp
 
 
-
-bin/simplex-debug: src/*
-	${CXX} ${DEBUG} -o $@ $^
-bin/simplex: src/*
-	${CXX} ${RELEASE} -o $@ $^
-
+bin/simplex-debug: src/* includes/*
+	${CXX} ${DEBUG} -o $@ src/*
+bin/simplex: src/* includes/*
+	${CXX} ${RELEASE} -o $@ src/*
+static/SimplexLP.hpp: includes/*
+	./header.py includes $@
 
 .DEFAULT_GOAL := release
 .PHONY: clean simplex lib
