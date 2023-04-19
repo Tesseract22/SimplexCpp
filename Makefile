@@ -5,6 +5,7 @@ RELEASE=-O3
 OBJ_FLASG=-c
 ENTRY=entry/main.cc
 ENTRY_OBJ=objs/entry.o
+INSTALL_PATH=/usr/local/include/SimplexLP/
 
 LUA_LIB=-llua5.4 -lluacpp
 LUA_FLAG=${LUA_LIB}
@@ -14,6 +15,9 @@ LUA_FLAG=${LUA_LIB}
 release: bin/simplex
 simplex: bin/simplex-debug
 lib: static/SimplexLP.hpp
+install: src/* includes/*
+	mkdir ${INSTALL_PATH} || rm -r ${INSTALL_PATH}
+	cp -r includes/* ${INSTALL_PATH}
 
 
 bin/simplex-debug: src/* includes/*
