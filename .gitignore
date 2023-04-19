@@ -4,4 +4,5 @@ objs/*
 header.py
 data/
 game/
-*.lua
+*.lua	
+Lua*

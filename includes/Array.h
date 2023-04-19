@@ -10,7 +10,6 @@ template <typename T, size_t N> using Array = Matrix<T, 1, N>;
 template <typename T, size_t N> class Matrix<T, 1, N> {
 
 public:
-  static_assert(std::is_arithmetic<T>::value, "Array type must be numeric");
   Matrix() = default;
 
   Matrix(const std::string &path);
@@ -30,11 +29,41 @@ public:
   const T &at(size_t col) const { return arr_[index(col)]; }
 
   void debugPrint() const;
+  template <typename Floating,
+            std::enable_if_t<std::is_floating_point<Floating>::value, bool>>
 
   void static arrayAddition(Array<T, N> &dest, const Array<T, N> &source,
-                            T mul);
+                            T mul) {
+    if (mul == 0)
+      return;
+    size_t j;
+    __m128 mul_vec = _mm_set1_ps(mul);
+    for (j = 0; j < N / 4 * 4; j += 4) {
+      __m128 dest_vec = _mm_load_ps(dest.arr_ + j);
+      __m128 other_vec = _mm_load_ps(source.arr_ + j);
+      __m128 result_vec = _mm_add_ps(dest_vec, _mm_mul_ps(other_vec, mul_vec));
+      _mm_store_ps(dest.arr_ + j, result_vec);
+    }
+    for (; j < N; ++j) {
+      // std::cout << j << std::endl;
+      // std::cout << source.arr_[j] << std::endl;
+      dest.arr_[j] += source.arr_[j] * mul;
+    }
+  }
+  template <typename Floating,
+            std::enable_if_t<std::is_floating_point<Floating>::value, bool>>
+  void arrayMultiplication(T factor) {
+    size_t j;
+    __m128 mul_vec = _mm_set1_ps(factor);
+    for (j = 0; j < N / 4 * 4; j += 4) {
 
-  void arrayMultiplication(T factor);
+      __m128 result_vec = _mm_mul_ps(_mm_load_ps(arr_ + j), mul_vec);
+      _mm_store_ps(arr_ + j, result_vec);
+    }
+    for (; j < N; ++j) {
+      arr_[j] *= factor;
+    }
+  }
 
   size_t save(const std::string &path);
 
@@ -107,38 +136,5 @@ template <typename T, size_t N> void Matrix<T, 1, N>::debugPrint() const {
 template <typename T, size_t N> Matrix<T, 1, N>::Matrix(T (&arr)[N]) {
   for (size_t j = 0; j < N; ++j) {
     arr_[index(j)] = arr[j];
-  }
-}
-
-template <typename T, size_t N>
-void Matrix<T, 1, N>::arrayAddition(Array<T, N> &dest,
-                                    const Array<T, N> &source, T mul) {
-  if (mul == 0)
-    return;
-  size_t j;
-  __m128 mul_vec = _mm_set1_ps(mul);
-  for (j = 0; j < N / 4 * 4; j += 4) {
-    __m128 dest_vec = _mm_load_ps(dest.arr_ + j);
-    __m128 other_vec = _mm_load_ps(source.arr_ + j);
-    __m128 result_vec = _mm_add_ps(dest_vec, _mm_mul_ps(other_vec, mul_vec));
-    _mm_store_ps(dest.arr_ + j, result_vec);
-  }
-  for (; j < N; ++j) {
-    // std::cout << j << std::endl;
-    // std::cout << source.arr_[j] << std::endl;
-    dest.arr_[j] += source.arr_[j] * mul;
-  }
-}
-template <typename T, size_t N>
-void Matrix<T, 1, N>::arrayMultiplication(T factor) {
-  size_t j;
-  __m128 mul_vec = _mm_set1_ps(factor);
-  for (j = 0; j < N / 4 * 4; j += 4) {
-
-    __m128 result_vec = _mm_mul_ps(_mm_load_ps(arr_ + j), mul_vec);
-    _mm_store_ps(arr_ + j, result_vec);
-  }
-  for (; j < N; ++j) {
-    arr_[j] *= factor;
   }
 }
