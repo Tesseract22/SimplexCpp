@@ -16,7 +16,8 @@ release: bin/simplex
 simplex: bin/simplex-debug
 lib: static/SimplexLP.hpp
 install: src/* includes/*
-	mkdir ${INSTALL_PATH} || rm -r ${INSTALL_PATH}
+	rm -r -f ${INSTALL_PATH}
+	mkdir ${INSTALL_PATH}
 	cp -r includes/* ${INSTALL_PATH}
 
 

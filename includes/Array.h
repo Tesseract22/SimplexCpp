@@ -29,11 +29,10 @@ public:
   const T &at(size_t col) const { return arr_[index(col)]; }
 
   void debugPrint() const;
-  template <typename Floating,
-            std::enable_if_t<std::is_floating_point<Floating>::value, bool>>
-
-  void static arrayAddition(Array<T, N> &dest, const Array<T, N> &source,
-                            T mul) {
+  template <class Q = T>
+  typename std::enable_if<std::is_same<Q, float>::value, void>::
+      type static arrayAddition(Array<T, N> &dest, const Array<T, N> &source,
+                                T mul) {
     if (mul == 0)
       return;
     size_t j;
@@ -50,9 +49,9 @@ public:
       dest.arr_[j] += source.arr_[j] * mul;
     }
   }
-  template <typename Floating,
-            std::enable_if_t<std::is_floating_point<Floating>::value, bool>>
-  void arrayMultiplication(T factor) {
+  template <class Q = T>
+  typename std::enable_if<std::is_same<Q, float>::value, void>::type
+  arrayMultiplication(T factor) {
     size_t j;
     __m128 mul_vec = _mm_set1_ps(factor);
     for (j = 0; j < N / 4 * 4; j += 4) {
