@@ -23,6 +23,7 @@ public:
       get(i) = fill;
   }
 
+  size_t precision = 3;
   //   Matrix operator=(std::initializer_list<T> list);
 
   inline T &operator[](size_t col) { return arr_[index(col)]; }
@@ -34,17 +35,28 @@ public:
   const T &at(size_t col) const { return arr_[index(col)]; }
 
   friend std::ostream &operator<<(std::ostream &stream, const Array<T, N> &s) {
-    const static char sep = ' ';
-    const static int width = 7;
-    std::fprintf(stderr, "\n");
+    char out[(N + 1) * 15 + 100];
+    std::string precision_format;
+    precision_format += "%10." + std::to_string(s.precision) + "f";
+
+    size_t position = 0;
+    position += std::sprintf(out + position, "\n");
+
     for (size_t j = 0; j < N; ++j) {
-      std::fprintf(stderr, "%7zu", j);
+      position += std::sprintf(out + position, "%10zu", j);
     }
-    std::fprintf(stderr, "\n");
+    position += std::sprintf(out + position, "\n");
+    stream << out;
+    position = 0;
     for (size_t j = 0; j < N; ++j) {
-      std::fprintf(stderr, "%7.3f", s.at(j));
+      position +=
+          std::sprintf(out + position, precision_format.data(), s.at(j));
     }
-    std::fprintf(stderr, "\n");
+    position += std::sprintf(out + position, "\n");
+
+    stream << out;
+    position = 0;
+
     return stream;
   }
 

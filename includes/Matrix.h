@@ -61,21 +61,31 @@ public:
 
   friend std::ostream &operator<<(std::ostream &stream,
                                   const Matrix<T, M, N> &s) {
-    const static char sep = ' ';
-    const static int width = 7;
-    std::fprintf(stderr, "\n");
-    std::fprintf(stderr, "%3s", "");
+
+    char out[(N + 1) * 15 + 100];
+    size_t position = 0;
+    position += std::sprintf(out + position, "\n");
+    position += std::sprintf(out + position, "%3s", "");
 
     for (size_t j = 0; j < N; ++j) {
-      std::fprintf(stderr, "%10zu", j);
+      position += std::sprintf(out + position, "%10zu", j);
     }
-    std::fprintf(stderr, "\n");
+
+    stream << out;
+    position = 0;
+    std::string precision_format;
+    precision_format += "%10." + std::to_string(s.precision) + "f";
+    position += std::sprintf(out + position, "\n");
     for (size_t i = 0; i < M; ++i) {
-      std::fprintf(stderr, "%3zu", i);
+      position += std::sprintf(out + position, "%3zu", i);
       for (size_t j = 0; j < N; ++j) {
-        std::fprintf(stderr, "%10.3f", s.at(i, j));
+        position +=
+            std::sprintf(out + position, precision_format.data(), s.at(i, j));
       }
-      std::fprintf(stderr, "\n");
+      position += std::sprintf(out + position, "\n");
+
+      stream << out;
+      position = 0;
     }
     return stream;
   }
@@ -115,6 +125,7 @@ public:
   }
 
   size_t save(const std::string &path);
+  size_t precision = 3;
 
 private:
   size_t index(size_t row, size_t col) const {

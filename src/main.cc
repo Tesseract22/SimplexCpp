@@ -19,6 +19,7 @@ int main() {
       {2, -3, 1},
       {-1, 1, -2},
   });
+  lhs.precision = 1;
   cout << lhs << endl;
   return 0;
 }
