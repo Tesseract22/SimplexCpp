@@ -18,6 +18,11 @@ public:
 
   Matrix(std::initializer_list<T> list);
 
+  Matrix(T fill) {
+    for (size_t i = 0; i < ALIGN_COL(N); ++i)
+      get(i) = fill;
+  }
+
   //   Matrix operator=(std::initializer_list<T> list);
 
   inline T &operator[](size_t col) { return arr_[index(col)]; }
@@ -29,6 +34,7 @@ public:
   const T &at(size_t col) const { return arr_[index(col)]; }
 
   void debugPrint() const;
+
   template <class Q = T>
   typename std::enable_if<std::is_same<Q, float>::value, void>::
       type static arrayAddition(Array<T, N> &dest, const Array<T, N> &source,

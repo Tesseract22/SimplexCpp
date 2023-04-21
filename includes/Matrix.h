@@ -2,7 +2,9 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <initializer_list>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <type_traits>
@@ -36,6 +38,11 @@ public:
   Matrix(T (&arr)[M][N]);
 
   Matrix(std::initializer_list<std::initializer_list<T>> list);
+
+  Matrix(T fill) {
+    for (size_t i = 0; i < ALIGN_COL(N) * M; ++i)
+      get(i) = fill;
+  }
 
   /**
    * retunrs a reference at the given location
@@ -158,11 +165,18 @@ Matrix<T, M, N>::Matrix(std::initializer_list<std::initializer_list<T>> list) {
 
 template <typename T, size_t M, size_t N>
 void Matrix<T, M, N>::debugPrint() const {
+  const static char sep = ' ';
+  const static int width = 7;
+  std::fprintf(stderr, "\n");
+  for (size_t j = 0; j < N; ++j) {
+    std::fprintf(stderr, "%10zu", j);
+  }
+  std::fprintf(stderr, "\n");
   for (size_t i = 0; i < M; ++i) {
     for (size_t j = 0; j < N; ++j) {
-      std::cout << at(i, j) << ' ';
+      std::fprintf(stderr, "%10.3f", at(i, j));
     }
-    std::cout << std::endl;
+    std::fprintf(stderr, "\n");
   }
 }
 

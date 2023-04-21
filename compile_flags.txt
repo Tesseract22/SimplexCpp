@@ -1,5 +1,4 @@
 g++
 -std=c++2a
 -Iincludes
--I/usr/local/include/LuaCpp
--I/usr/include/lua5.4/
+-Itests

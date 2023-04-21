@@ -6,3 +6,4 @@ data/
 game/
 *.lua	
 Lua*
+.clangd
