@@ -49,11 +49,11 @@ public:
     float res = 0;
     bool success = false;
     Array<float, N> variables;
-    size_t it = 0;
+    size_t iterations = 0;
     friend std::ostream &operator<<(std::ostream &stream, const Solution &s) {
       stream << "Success: " << s.success << '\n';
       stream << "Result: " << s.res << '\n';
-      stream << "Iterations: " << s.it << '\n';
+      stream << "Iterations: " << s.iterations << '\n';
       for (size_t i = 0; i < N; ++i) {
         stream << "x" << i << ": " << s.variables[i] << ' ';
       }
@@ -65,10 +65,12 @@ public:
 
   template <size_t TM, size_t TN>
   Solution solveLP(Matrix<float, TM + 1, TN + TM + 2> &tab) {
+
     Solution s;
     while (true) {
-      s.it += 1;
-      //   std::cout << "iterations: " << s.it << std::endl;
+      s.iterations += 1;
+      //   std::cout << "iterations: " << s.iterations << std::endl;
+      //   std::cout << s << std::endl;
       s.res = tab.at(TM, TN + TM + 1);
       //   std::cout << "res " << s.res << std::endl;
       //   tab.debugPrint();
@@ -77,9 +79,10 @@ public:
           getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
       if (pivot_col == TN + TM + 2) {
         s.success = true;
-
+        // std::cout << s << std::endl;
         for (auto &it : vars.basic_vars) {
-          s.variables[it.first] = tab.at(it.second, TM + TN + 1);
+          if (it.first < TN)
+            s.variables[it.first] = tab.at(it.second, TM + TN + 1);
         }
         return s;
       }
@@ -119,18 +122,16 @@ public:
    * '<'
    * @return Solution
    */
-  template <size_t TM, size_t TN>
-  Solution solveLP(const Array<float, TN> &object,
-                   const Matrix<float, TM, TN> &ineq_lhs,
-                   const Array<float, TM> &ineq_rhs) {
+  Solution solveLP(const Array<float, N> &object,
+                   const Matrix<float, M, N> &ineq_lhs,
+                   const Array<float, M> &ineq_rhs) {
 
-    Matrix<float, TM + 1, TN + TM + 2> tab =
-        toTableau<TM, TN>(object, ineq_lhs, ineq_rhs);
+    if (!createTableau(object, ineq_lhs, ineq_rhs))
+      return solution;
     // https://www.matem.unam.mx/~omar/math340/2-phase.htmlhttps://www.matem.unam.mx/~omar/math340/2-phase.html
     // we need convert all negative rhs to positive
     // to do that, we first need to solve the auxiliary lp
-    // tab.debugPrint();
-    return solveLP<TM, TN>(tab);
+    return solveLP<M, N>(tab);
   }
 
 private:
@@ -142,31 +143,21 @@ private:
     vars.non_basic_vars.erase(pivot_col);
     vars.row_basic[pivot_row] = pivot_col;
   }
-  template <size_t TM, size_t TN>
-  Matrix<float, TM + 1, N + TM + 2>
-  toTableau(const Array<float, TN> &object,
-            const Matrix<float, TM, TN> &ineq_lhs,
-            const Array<float, TM> &ineq_rhs) {
-    Matrix<float, TM + 1, TN + TM + 2> tab;
-
+  bool createTableau(const Array<float, N> &object,
+                     const Matrix<float, M, N> &ineq_lhs,
+                     const Array<float, M> &ineq_rhs) {
     bool is_infeasible = false;
 
     size_t least_var = 0;
     size_t least_row = 0;
     float least = 0;
-
-    Array<size_t, TN> basic_var_arr; // if basic var, each entry denote at which
-                                     // row it is basic
-    Array<size_t, TN> count_arr;
     // set all the regular entry
-    for (size_t i = 0; i < TM; ++i) {
-      for (size_t j = 0; j < TN; ++j) {
+    for (size_t i = 0; i < M; ++i) {
+      for (size_t j = 0; j < N; ++j) {
         tab.get(i, j) =
             ineq_lhs.at(i, j) * SIMPLEX_REVERSE_SIGN(is_less_than[i]);
         if (ineq_lhs.at(i, j) != 0) {
           // records the frequency of non_zero entry for each variables
-          count_arr[j]++;
-          basic_var_arr[j] = i;
         }
       }
 
@@ -176,97 +167,87 @@ private:
         is_infeasible = true;
         //   std::cout << "least " << least_row <
       }
-      size_t basic_row = TN + i;
-      vars.basic_vars.insert({TN + i, i});
-      vars.row_basic[i] = TN + i;
-      tab.get(i, TN + i) = 1;
-      tab.get(i, TN + TM + 1) =
+      size_t basic_row = N + i;
+      vars.basic_vars.insert({N + i, i});
+      vars.row_basic[i] = N + i;
+      tab.get(i, N + i) = 1;
+      tab.get(i, N + M + 1) =
           ineq_rhs[i] * SIMPLEX_REVERSE_SIGN(is_less_than[i]);
     }
     // find the basic vars
-    for (size_t j = 0; j < TN; ++j) {
-      //   size_t row = basic_var_arr[j];
-      //   if (count_arr[j] == 1 && vars.basic_vars[row] != -1) {
-      //     vars.basic_vars.insert({j, row});
-      //     vars.row_basic[row] = j;
-      //   } else
+    for (size_t j = 0; j < N; ++j) {
       vars.non_basic_vars.insert(j);
     }
     // set objection function
-    for (size_t j = 0; j < TN; ++j) {
-      tab.get(TM, j) = -object[j] * SIMPLEX_REVERSE_SIGN(is_minimize);
+    for (size_t j = 0; j < N; ++j) {
+      tab.get(M, j) = -object[j] * SIMPLEX_REVERSE_SIGN(is_minimize);
     }
     // set the object "itself"
-    tab.get(TM, TN + TM) = 1;
+    tab.get(M, N + M) = 1;
     // tab.debugPrint();
     // std::cout << vars;
     // ----------------------------------------------------
     // if not feasible, we have to use the auxiliary matrix
     if (is_infeasible) {
-
-      Matrix<float, TM + 1, TN + TM + 3> aux_tab; // one more variable
-      size_t aux_var = TN + TM;                   // the new variable idx
-      for (size_t i = 0; i < TM; ++i) {
-        for (size_t j = 0; j < aux_var; ++j) {
-          aux_tab.get(i, j) = tab.at(i, j);
-        }
-      }
-      for (size_t i = 0; i < TM; ++i) {
-        aux_tab.get(i, aux_var) = -1;
-      }
-      aux_tab.get(TM, aux_var) = 1;
-      aux_tab.get(TM, aux_var + 1) = 1;
-      for (size_t i = 0; i < TM; ++i) {
-        aux_tab.get(i, TN + TM + 2) = tab.get(i, TN + TM + 1);
-      }
-      //   aux_tab.debugPrint();
-      size_t pivot_row = least_row;
-      // vars.basic_vars.insert({aux_var, })
-
-      //   std::cout << "pivot ";
-      //   std::cout << pivot_row << ' ' << aux_var << '\n';
-
-      pivotVar(pivot_row, aux_var);
-
-      aux_tab.rowMultiplication(pivot_row, -1);
-      for (size_t i = 0; i < TM; ++i) {
-        if (i != pivot_row)
-          aux_tab.rowAddition(i, pivot_row, 1);
-      }
-      aux_tab.rowAddition(TM, pivot_row, -1);
-      //   aux_tab.debugPrint();
-      //   std::cout << vars;
-      Solution solution = solveLP<TM, TN + 1>(aux_tab);
-      //   std::cout << solution << '\n';
-      if (!solution.success ||
-          !isApproxEqual<float>(solution.res, 0, SIMPLEX_FLOAT_PRECISION)) {
-        return {};
-      }
-
-      //   aux_tab.debugPrint();
-
-      // place it back to result
-      for (size_t i = 0; i < M; ++i) {
-        for (size_t j = 0; j < TN + M; ++j) {
-          tab.get(i, j) = aux_tab.at(i, j);
-        }
-      }
-      for (size_t i = 0; i < M; ++i) {
-        tab.get(i, TN + M + 1) = aux_tab.get(i, TN + M + 2);
-      }
-      // aux the object function
-      for (const auto &it : vars.basic_vars) {
-        size_t j = it.first;
-        size_t i = it.second;
-        if (tab.at(M, j) != 0) {
-          tab.rowAddition(M, i, -tab.at(M, j));
-        }
-      }
+      return solveAuxiliary(least_row);
       //   aux_tab.debugPrint();
     }
 
-    return tab;
+    return true;
   }
+  bool solveAuxiliary(size_t pivot_row) {
+    Matrix<float, M + 1, N + M + 3> aux_tab; // one more variable
+    size_t aux_var = N + M;                  // the new variable idx
+    for (size_t i = 0; i < M; ++i) {
+      for (size_t j = 0; j < aux_var; ++j) {
+        aux_tab.get(i, j) = tab.at(i, j);
+      }
+    }
+    for (size_t i = 0; i < M; ++i) {
+      aux_tab.get(i, aux_var) = -1;
+    }
+    aux_tab.get(M, aux_var) = 1;
+    aux_tab.get(M, aux_var + 1) = 1;
+    for (size_t i = 0; i < M; ++i) {
+      aux_tab.get(i, N + M + 2) = tab.get(i, N + M + 1);
+    }
+
+    pivotVar(pivot_row, aux_var);
+
+    aux_tab.rowMultiplication(pivot_row, -1);
+    for (size_t i = 0; i < M; ++i) {
+      if (i != pivot_row)
+        aux_tab.rowAddition(i, pivot_row, 1);
+    }
+    aux_tab.rowAddition(M, pivot_row, -1);
+    //   aux_tab.debugPrint();
+    //   std::cout << vars;
+    Solution solution = solveLP<M, N + 1>(aux_tab);
+    //   std::cout << solution << '\n';
+    if (!solution.success ||
+        !isApproxEqual<float>(solution.res, 0, SIMPLEX_FLOAT_PRECISION)) {
+      return false;
+    }
+    // place it back to result
+    for (size_t i = 0; i < M; ++i) {
+      for (size_t j = 0; j < N + M; ++j) {
+        tab.get(i, j) = aux_tab.at(i, j);
+      }
+    }
+    for (size_t i = 0; i < M; ++i) {
+      tab.get(i, N + M + 1) = aux_tab.get(i, N + M + 2);
+    }
+    // aux the object function
+    for (const auto &it : vars.basic_vars) {
+      size_t j = it.first;
+      size_t i = it.second;
+      if (tab.at(M, j) != 0) {
+        tab.rowAddition(M, i, -tab.at(M, j));
+      }
+    }
+    return true;
+  }
+
   template <size_t TM, size_t TN>
   size_t getPivotCol(const Matrix<float, TM + 1, TN + TM + 2> &m, Vars &vars) {
     float min = 0;
@@ -326,6 +307,7 @@ private:
     //   m.debugPrint();
   }
   Vars vars;
+  Matrix<float, M + 1, M + N + 2> tab;
   float epsilon = SIMPLEX_FLOAT_PRECISION;
   Array<bool, M> is_less_than;
   bool is_minimize;
