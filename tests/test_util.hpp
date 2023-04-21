@@ -18,7 +18,7 @@ void checkMatrix(const Matrix<T, M, N> &matrix, const std::string &s) {
   stringstream ss;
   auto buf = cout.rdbuf();
   cout.rdbuf(ss.rdbuf());
-  matrix.debugPrint();
+  cerr << matrix << endl;
   string expected = ss.str();
   if (!expected.starts_with(s)) {
 

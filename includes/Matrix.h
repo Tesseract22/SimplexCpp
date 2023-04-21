@@ -59,7 +59,26 @@ public:
 
   const T &at(size_t row, size_t col) const { return arr_[index(row, col)]; }
 
-  void debugPrint() const;
+  friend std::ostream &operator<<(std::ostream &stream,
+                                  const Matrix<T, M, N> &s) {
+    const static char sep = ' ';
+    const static int width = 7;
+    std::fprintf(stderr, "\n");
+    std::fprintf(stderr, "%3s", "");
+
+    for (size_t j = 0; j < N; ++j) {
+      std::fprintf(stderr, "%10zu", j);
+    }
+    std::fprintf(stderr, "\n");
+    for (size_t i = 0; i < M; ++i) {
+      std::fprintf(stderr, "%3zu", i);
+      for (size_t j = 0; j < N; ++j) {
+        std::fprintf(stderr, "%10.3f", s.at(i, j));
+      }
+      std::fprintf(stderr, "\n");
+    }
+    return stream;
+  }
 
   template <class Q = T>
   typename std::enable_if<std::is_same<Q, float>::value, void>::type
@@ -160,23 +179,6 @@ Matrix<T, M, N>::Matrix(std::initializer_list<std::initializer_list<T>> list) {
       col++;
     }
     row++;
-  }
-}
-
-template <typename T, size_t M, size_t N>
-void Matrix<T, M, N>::debugPrint() const {
-  const static char sep = ' ';
-  const static int width = 7;
-  std::fprintf(stderr, "\n");
-  for (size_t j = 0; j < N; ++j) {
-    std::fprintf(stderr, "%10zu", j);
-  }
-  std::fprintf(stderr, "\n");
-  for (size_t i = 0; i < M; ++i) {
-    for (size_t j = 0; j < N; ++j) {
-      std::fprintf(stderr, "%10.3f", at(i, j));
-    }
-    std::fprintf(stderr, "\n");
   }
 }
 

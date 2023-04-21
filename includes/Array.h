@@ -33,7 +33,20 @@ public:
 
   const T &at(size_t col) const { return arr_[index(col)]; }
 
-  void debugPrint() const;
+  friend std::ostream &operator<<(std::ostream &stream, const Array<T, N> &s) {
+    const static char sep = ' ';
+    const static int width = 7;
+    std::fprintf(stderr, "\n");
+    for (size_t j = 0; j < N; ++j) {
+      std::fprintf(stderr, "%7zu", j);
+    }
+    std::fprintf(stderr, "\n");
+    for (size_t j = 0; j < N; ++j) {
+      std::fprintf(stderr, "%7.3f", s.at(j));
+    }
+    std::fprintf(stderr, "\n");
+    return stream;
+  }
 
   template <class Q = T>
   typename std::enable_if<std::is_same<Q, float>::value, void>::
@@ -129,13 +142,6 @@ Matrix<T, 1, N>::Matrix(const std::string &path) {
 
   if (f)
     fclose(f);
-}
-
-template <typename T, size_t N> void Matrix<T, 1, N>::debugPrint() const {
-  for (size_t j = 0; j < N; ++j) {
-    std::cout << at(j) << ' ';
-  }
-  std::cout << std::endl;
 }
 
 template <typename T, size_t N> Matrix<T, 1, N>::Matrix(T (&arr)[N]) {
