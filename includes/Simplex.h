@@ -73,7 +73,7 @@ public:
       s.iterations += 1;
       //   std::cout << "iterations: " << s.iterations << std::endl;
       //   std::cout << s << std::endl;
-      s.res = tab.at(TM, TN + TM + 1);
+      s.res = tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_minimize);
       //   std::cout << "res " << s.res << std::endl;
       //   tab.debugPrint();
       //   std::cout << vars;a
