@@ -65,19 +65,19 @@ public:
   friend std::ostream &operator<<(std::ostream &stream,
                                   const Matrix<T, M, N> &s) {
 
-    char out[(N + 1) * 15 + 100];
+    char out[(N + 1) * 20 + 100];
     std::string precision_format;
-    precision_format += "%10." + std::to_string(s.precision) + "f";
+    precision_format += "%20." + std::to_string(s.precision) + "f";
 
     size_t position = 0;
     position += std::sprintf(out + position, "\n");
 
     // index header
-    position += std::sprintf(out + position, "%3s", "");
+    position += std::sprintf(out + position, "%4s", "");
     if (s.row_header)
-      position += std::sprintf(out + position, "%10s", "");
+      position += std::sprintf(out + position, "%20s", "");
     for (size_t j = 0; j < N; ++j) {
-      position += std::sprintf(out + position, "%10zu", j);
+      position += std::sprintf(out + position, "%20zu", j);
     }
     position += std::sprintf(out + position, "\n");
     stream << out;
@@ -86,12 +86,12 @@ public:
     // provided header
 
     if (s.col_header) {
-      position += std::sprintf(out + position, "%3s", "");
+      position += std::sprintf(out + position, "%4s", "");
       if (s.row_header)
-        position += std::sprintf(out + position, "%10s", "");
+        position += std::sprintf(out + position, "%20s", "");
       for (size_t j = 0; j < N; ++j) {
-        position +=
-            std::sprintf(out + position, "%10s", s.col_header->at(j).data());
+        position += std::sprintf(out + position, "%20s",
+                                 s.col_header->at(j).substr(0, 20).data());
       }
     }
 
@@ -99,10 +99,10 @@ public:
     stream << out;
     position = 0;
     for (size_t i = 0; i < M; ++i) {
-      position += std::sprintf(out + position, "%3zu", i);
+      position += std::sprintf(out + position, "%4zu", i);
       if (s.row_header)
-        position +=
-            std::sprintf(out + position, "%10s", s.row_header->at(i).data());
+        position += std::sprintf(out + position, "%20s",
+                                 s.row_header->at(i).substr(0, 20).data());
       for (size_t j = 0; j < N; ++j) {
         position +=
             std::sprintf(out + position, precision_format.data(), s.at(i, j));
