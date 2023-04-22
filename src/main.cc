@@ -19,6 +19,9 @@ int main() {
       {2, -3, 1},
       {-1, 1, -2},
   });
+  Array<string, 3> name({"aa", "bb", "cc"});
+  lhs.col_header = &name;
+  lhs.row_header = &name;
   lhs.precision = 1;
   cout << lhs << endl;
   return 0;

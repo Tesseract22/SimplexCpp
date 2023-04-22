@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include <vector>
 #include <xmmintrin.h>
 #define PADDING 4
 #define ALIGN_COL(N) (((N + PADDING - 1) / PADDING * PADDING))
@@ -27,6 +28,8 @@
 //     size_t bytes_read = fread(buffer, 1, block_size, f);
 //   }
 // }
+template <typename T, size_t M, size_t N> class Matrix;
+template <typename T, size_t N> using Array = Matrix<T, 1, N>;
 template <typename T, size_t M, size_t N> class Matrix {
 
 public:
@@ -63,21 +66,43 @@ public:
                                   const Matrix<T, M, N> &s) {
 
     char out[(N + 1) * 15 + 100];
+    std::string precision_format;
+    precision_format += "%10." + std::to_string(s.precision) + "f";
+
     size_t position = 0;
     position += std::sprintf(out + position, "\n");
-    position += std::sprintf(out + position, "%3s", "");
 
+    // index header
+    position += std::sprintf(out + position, "%3s", "");
+    if (s.row_header)
+      position += std::sprintf(out + position, "%10s", "");
     for (size_t j = 0; j < N; ++j) {
       position += std::sprintf(out + position, "%10zu", j);
     }
-
+    position += std::sprintf(out + position, "\n");
     stream << out;
     position = 0;
-    std::string precision_format;
-    precision_format += "%10." + std::to_string(s.precision) + "f";
+
+    // provided header
+
+    if (s.col_header) {
+      position += std::sprintf(out + position, "%3s", "");
+      if (s.row_header)
+        position += std::sprintf(out + position, "%10s", "");
+      for (size_t j = 0; j < N; ++j) {
+        position +=
+            std::sprintf(out + position, "%10s", s.col_header->at(j).data());
+      }
+    }
+
     position += std::sprintf(out + position, "\n");
+    stream << out;
+    position = 0;
     for (size_t i = 0; i < M; ++i) {
       position += std::sprintf(out + position, "%3zu", i);
+      if (s.row_header)
+        position +=
+            std::sprintf(out + position, "%10s", s.row_header->at(i).data());
       for (size_t j = 0; j < N; ++j) {
         position +=
             std::sprintf(out + position, precision_format.data(), s.at(i, j));
@@ -126,6 +151,8 @@ public:
 
   size_t save(const std::string &path);
   size_t precision = 3;
+  Array<std::string, N> *col_header = nullptr;
+  Array<std::string, N> *row_header = nullptr;
 
 private:
   size_t index(size_t row, size_t col) const {

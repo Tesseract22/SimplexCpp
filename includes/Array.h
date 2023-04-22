@@ -23,7 +23,6 @@ public:
       get(i) = fill;
   }
 
-  size_t precision = 3;
   //   Matrix operator=(std::initializer_list<T> list);
 
   inline T &operator[](size_t col) { return arr_[index(col)]; }
@@ -35,28 +34,16 @@ public:
   const T &at(size_t col) const { return arr_[index(col)]; }
 
   friend std::ostream &operator<<(std::ostream &stream, const Array<T, N> &s) {
-    char out[(N + 1) * 15 + 100];
-    std::string precision_format;
-    precision_format += "%10." + std::to_string(s.precision) + "f";
 
-    size_t position = 0;
-    position += std::sprintf(out + position, "\n");
-
+    std::fprintf(stderr, "\n");
     for (size_t j = 0; j < N; ++j) {
-      position += std::sprintf(out + position, "%10zu", j);
+      std::fprintf(stderr, "%7zu", j);
     }
-    position += std::sprintf(out + position, "\n");
-    stream << out;
-    position = 0;
+    std::fprintf(stderr, "\n");
     for (size_t j = 0; j < N; ++j) {
-      position +=
-          std::sprintf(out + position, precision_format.data(), s.at(j));
+      std::fprintf(stderr, "%7.3f", s.at(j));
     }
-    position += std::sprintf(out + position, "\n");
-
-    stream << out;
-    position = 0;
-
+    std::fprintf(stderr, "\n");
     return stream;
   }
 
@@ -68,6 +55,7 @@ public:
       return;
     size_t j;
     __m128 mul_vec = _mm_set1_ps(mul);
+    std::cout << ALIGN_COL(N) << std::endl;
     for (j = 0; j < N / 4 * 4; j += 4) {
       __m128 dest_vec = _mm_load_ps(dest.arr_ + j);
       __m128 other_vec = _mm_load_ps(source.arr_ + j);
@@ -98,6 +86,7 @@ public:
   size_t save(const std::string &path);
 
 private:
+  //   size_t precision;
   inline size_t index(size_t col) const { return col; }
   T arr_[ALIGN_COL(N)] = {};
 };
