@@ -20,7 +20,7 @@ public:
           const Array<float, M> &ineq_rhs,
           Array<bool, M> is_less_than = SIMPLEX_DEFAULT_LEQ_ARR(M),
           bool is_minimize = true)
-      : is_less_than(is_less_than), is_minimize(is_minimize) {
+      : is_less_than(is_less_than), is_maximize(is_minimize) {
     vars.row_basic = Array<size_t, M>(-1);
     solution = solveLP(object, ineq_lhs, ineq_rhs);
   }
@@ -73,7 +73,7 @@ public:
       s.iterations += 1;
       //   std::cout << "iterations: " << s.iterations << std::endl;
       //   std::cout << s << std::endl;
-      s.res = tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_minimize);
+      s.res = tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_maximize);
       //   std::cout << "res " << s.res << std::endl;
       //   tab.debugPrint();
       //   std::cout << vars;a
@@ -183,7 +183,7 @@ private:
     }
     // set objection function
     for (size_t j = 0; j < N; ++j) {
-      tab.get(M, j) = -object[j] * SIMPLEX_REVERSE_SIGN(is_minimize);
+      tab.get(M, j) = -object[j] * SIMPLEX_REVERSE_SIGN(is_maximize);
     }
     // set the object "itself"
     tab.get(M, N + M) = 1;
@@ -319,5 +319,5 @@ private:
   Matrix<float, M + 1, M + N + 2> tab;
   float epsilon = SIMPLEX_FLOAT_PRECISION;
   Array<bool, M> is_less_than;
-  bool is_minimize;
+  bool is_maximize;
 }; // namespace Simplex
