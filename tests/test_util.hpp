@@ -42,7 +42,7 @@ void checkMatrix(const Matrix<T, M, N> &matrix,
 template <typename T, size_t N>
 void checkMatrix(const Array<T, N> &matrix, const std::vector<T> &vec) {
   for (size_t j = 0; j < N; ++j) {
-    if (!isApproxEqual<T>(matrix[j], vec[j], SIMPLEX_FLOAT_PRECISION)) {
+    if (!Approx::isApproxEqual<T>(matrix[j], vec[j], SIMPLEX_FLOAT_PRECISION)) {
       cerr << "checkMatrix with Array<" + to_string(N) + ">\n";
       cerr << "at position <" + to_string(j) +
                   ">, expect: " + to_string(vec[j]) + ", but got " +

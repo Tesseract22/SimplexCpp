@@ -88,7 +88,7 @@ void simplex_method_basics() {
 }
 
 void simplex_method_phase_2() {
-#if 1
+#if 0
   {
     // large example
     // infeasible
@@ -168,7 +168,7 @@ void simplex_method_phase_2() {
                                2300. / 39.}));
   }
 #endif
-#if 1
+#if 0
   {
     // case 1. Should failed at Phase 1
     const size_t M = 3;
@@ -184,6 +184,27 @@ void simplex_method_phase_2() {
     auto &solution = s.solution;
     cerr << solution << '\n';
     assert(!solution.success);
+  }
+#endif
+#if 1
+  {
+    // degenerate example
+    const size_t M = 3;
+    const size_t N = 4;
+    Matrix<float, M, N> lhs({
+        {1. / 2, -11. / 2, -5. / 2, 9},
+        {1. / 2, -3. / 2, -1. / 2, 1},
+        {1, 0, 0, 0},
+    });
+    Array<float, N> obj({10, -57, -9, -24});
+    Array<float, M> rhs({0, 0, 1});
+    Simplex s(obj, lhs, rhs, SIMPLEX_DEFAULT_LEQ_ARR(M), true);
+    auto &solution = s.solution;
+    cerr << solution << '\n';
+    assert(solution.success);
+    assert(Approx::isApproxEqual<float>(solution.res, 1.,
+                                        SIMPLEX_FLOAT_PRECISION));
+    checkMatrix(solution.variables, vector<float>({1, 0, 1, 0}));
   }
 #endif
 }

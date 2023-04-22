@@ -19,8 +19,8 @@ public:
   Simplex(const Array<float, N> &object, const Matrix<float, M, N> &ineq_lhs,
           const Array<float, M> &ineq_rhs,
           Array<bool, M> is_less_than = SIMPLEX_DEFAULT_LEQ_ARR(M),
-          bool is_minimize = true)
-      : is_less_than(is_less_than), is_maximize(is_minimize) {
+          bool is_maximize = true)
+      : is_less_than(is_less_than), is_maximize(is_maximize) {
     vars.row_basic = Array<size_t, M>(-1);
     solution = solveLP(object, ineq_lhs, ineq_rhs);
   }
@@ -68,18 +68,27 @@ public:
   template <size_t TM, size_t TN>
   Solution solveLP(Matrix<float, TM + 1, TN + TM + 2> &tab) {
     std::cout << "solve lp\n";
+    std::cout << tab;
     Solution s;
     while (true) {
       s.iterations += 1;
-      //   std::cout << "iterations: " << s.iterations << std::endl;
+      std::cout << "iterations: " << s.iterations << std::endl;
       //   std::cout << s << std::endl;
+      if (s.res ==
+          tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_maximize)) {
+        is_cycling = true;
+        std::cout << "cycling\n";
+      }
       s.res = tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_maximize);
-      //   std::cout << "res " << s.res << std::endl;
-      //   tab.debugPrint();
+      std::cout << "res " << s.res << std::endl;
+      std::cout << tab;
+      if (s.iterations == 10)
+        break;
       //   std::cout << vars;a
       size_t pivot_col =
           getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
       if (pivot_col == TN + TM + 2) {
+        std::cout << "success\n";
         s.success = true;
         // std::cout << s << std::endl;
         for (auto &it : vars.basic_vars) {
@@ -90,16 +99,27 @@ public:
       }
       size_t pivot_row = getPivotRow<TM, TN>(tab, pivot_col, vars);
       if (pivot_row == TM + 1) {
+        std::cout << "unbounded\n";
         return s;
       }
+      float a = tab.at(TM, pivot_col);
       size_t exiting_var = vars.row_basic[pivot_row];
-      //   std::cout << "entering: " << pivot_col << "  exiting: " <<
-      //   exiting_var
-      //             << " pivot row: " << pivot_row << '\n';
+      //   std::cout << "bottom: " << a << std::endl;
+
+      std::cout << "entering: " << pivot_col << "  exiting: " << exiting_var
+                << " pivot row: " << pivot_row << '\n';
+      if (exiting_var == prev_enter_var && pivot_col == prev_exiting_var) {
+        // std::cout << "cycling\n";
+        is_cycling = true;
+        // goto done;
+      }
 
       pivotVar(pivot_row, pivot_col);
       pivotMatrix<TM, TN>(tab, pivot_row, pivot_col);
+      prev_enter_var = pivot_col;
+      prev_exiting_var = exiting_var;
     }
+    return {};
   }
   /**
    * @brief Solve the linear programming problem using the Simplex method with
@@ -230,8 +250,10 @@ private:
     //   std::cout << vars;
     Solution solution = solveLP<M, N + 1>(aux_tab);
     //   std::cout << solution << '\n';
-    if (!solution.success ||
-        !isApproxEqual<float>(solution.res, 0, SIMPLEX_FLOAT_PRECISION)) {
+    std::cout << solution;
+    if (!solution.success || !Approx::isApproxEqual<float>(
+                                 solution.res, 0, SIMPLEX_FLOAT_PRECISION)) {
+      std::cout << "faillllllll\n";
       return false;
     }
     // place it back to result
@@ -262,14 +284,15 @@ private:
     float min = 0;
     size_t col = TN + TM + 2;
     for (auto &j : vars.non_basic_vars) {
-      if (m.at(TM, j) < min) {
+      if (Approx::isDefLessThan<float>(m.at(TM, j), min,
+                                       SIMPLEX_FLOAT_PRECISION)) {
         min = m.at(TM, j);
         col = j;
+        // std::cout << "new pivot col: " << col << '\n';
+        // std::cout << "value: " << min << '\n';
+        if (is_cycling)
+          break;
       }
-      // if (m.at(M, j) < min) {
-      //   min = m.at(M, j);
-      //   col = j;
-      // }
     }
     return col;
   }
@@ -287,16 +310,22 @@ private:
   template <size_t TM, size_t TN>
   size_t getPivotRow(const Matrix<float, TM + 1, TN + TM + 2> &m,
                      size_t pivot_col, Vars &vars) {
-    float min = __FLT_MAX__;
+    float min = __FLT_MAX__ - 1;
     size_t row = TM + 1;
     // @vector_multiplication
     for (auto &it : vars.basic_vars) {
       size_t i = it.second;
-      float ratio = (float)m.at(i, TN + TM + 1) / (float)m.at(i, pivot_col);
-      if (ratio >= 0 &&
-          isDefLessThan<float>(ratio, min, SIMPLEX_FLOAT_PRECISION)) {
+      float ratio;
+      std::cout << "at row: " << i << '\n';
+      if (Approx::isDefGreaterThan<float>(m.at(i, pivot_col), 0) &&
+          (ratio = m.at(i, TN + TM + 1) / m.at(i, pivot_col)) >= 0 &&
+          Approx::isDefLessThan<float>(ratio, min, SIMPLEX_FLOAT_PRECISION)) {
+        std::cout << "min: " << min << ' ' << "ratio: " << ratio << '\n';
         min = ratio;
         row = i;
+        // std::cout << "new pivot row: " << row << '\n';
+        if (is_cycling)
+          break;
       }
     }
     return row;
@@ -320,4 +349,7 @@ private:
   float epsilon = SIMPLEX_FLOAT_PRECISION;
   Array<bool, M> is_less_than;
   bool is_maximize;
+  bool is_cycling = false;
+  size_t prev_enter_var = M + N + 3;
+  size_t prev_exiting_var = M + N + 3;
 }; // namespace Simplex

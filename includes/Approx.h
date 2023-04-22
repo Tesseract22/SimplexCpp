@@ -1,9 +1,12 @@
 
 #pragma once
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <math.h>
 #define SIMPLEX_FLOAT_PRECISION 1e-6
+
+namespace Approx {
 template <typename TReal>
 static bool
 isApproxEqual(TReal a, TReal b,
@@ -22,8 +25,8 @@ isApproxEqual(TReal a, TReal b,
 }
 
 // supply tolerance that is meaningful in your context
-// for example, default tolerance may not work if you are comparing double with
-// float
+// for example, default tolerance may not work if you are comparing
+// double with float
 template <typename TReal>
 static bool
 isApporxZero(TReal a, TReal tolerance = std::numeric_limits<TReal>::epsilon()) {
@@ -39,10 +42,12 @@ static bool
 isDefLessThan(TReal a, TReal b,
               TReal tolerance = std::numeric_limits<TReal>::epsilon()) {
   TReal diff = a - b;
-  if (diff < tolerance)
+  if (diff > 0)
+    return false;
+  if (std::fabs(diff) > tolerance)
     return true;
 
-  if (diff < std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
+  if (std::fabs(diff) > std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
     return true;
 
   return false;
@@ -52,19 +57,21 @@ static bool
 isDefGreaterThan(TReal a, TReal b,
                  TReal tolerance = std::numeric_limits<TReal>::epsilon()) {
   TReal diff = a - b;
-  if (diff > tolerance)
+  if (diff < 0)
+    return false;
+  if (std::fabs(diff) > tolerance)
     return true;
 
-  if (diff > std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
+  if (std::fabs(diff) > std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
     return true;
 
   return false;
 }
 
 // implements ULP method
-// use this when you are only concerned about floating point precision issue
-// for example, if you want to see if a is 1.0 by checking if its within
-// 10 closest representable floating point numbers around 1.0.
+// use this when you are only concerned about floating point precision
+// issue for example, if you want to see if a is 1.0 by checking if its
+// within 10 closest representable floating point numbers around 1.0.
 template <typename TReal>
 static bool isWithinPrecisionInterval(TReal a, TReal b,
                                       unsigned int interval_size = 1) {
@@ -76,3 +83,4 @@ static bool isWithinPrecisionInterval(TReal a, TReal b,
 
   return min_a <= b && max_a >= b;
 }
+} // namespace Approx
