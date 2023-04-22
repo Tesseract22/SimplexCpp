@@ -152,7 +152,7 @@ public:
   size_t save(const std::string &path);
   size_t precision = 3;
   Array<std::string, N> *col_header = nullptr;
-  Array<std::string, N> *row_header = nullptr;
+  Array<std::string, M> *row_header = nullptr;
 
 private:
   size_t index(size_t row, size_t col) const {
