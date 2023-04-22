@@ -67,7 +67,7 @@ public:
 
     char out[(N + 1) * 20 + 100];
     std::string precision_format;
-    precision_format += "%20." + std::to_string(s.precision) + "f";
+    precision_format += "%20." + std::to_string(4) + "f";
 
     size_t position = 0;
     position += std::sprintf(out + position, "\n");
@@ -150,7 +150,6 @@ public:
   }
 
   size_t save(const std::string &path);
-  size_t precision = 3;
   Array<std::string, N> *col_header = nullptr;
   Array<std::string, M> *row_header = nullptr;
 

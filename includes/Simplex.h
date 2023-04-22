@@ -4,8 +4,10 @@
 #include "Matrix.h"
 #include <Approx.h>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <ostream>
 #include <set>
 #include <vector>
 
@@ -65,7 +67,7 @@ public:
 
   template <size_t TM, size_t TN>
   Solution solveLP(Matrix<float, TM + 1, TN + TM + 2> &tab) {
-
+    std::cout << "solve lp\n";
     Solution s;
     while (true) {
       s.iterations += 1;
@@ -74,7 +76,7 @@ public:
       s.res = tab.at(TM, TN + TM + 1);
       //   std::cout << "res " << s.res << std::endl;
       //   tab.debugPrint();
-      //   std::cout << vars;
+      //   std::cout << vars;a
       size_t pivot_col =
           getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
       if (pivot_col == TN + TM + 2) {
@@ -127,11 +129,12 @@ public:
                    const Array<float, M> &ineq_rhs) {
 
     if (!createTableau(object, ineq_lhs, ineq_rhs))
-      return solution;
+      return {};
     // https://www.matem.unam.mx/~omar/math340/2-phase.htmlhttps://www.matem.unam.mx/~omar/math340/2-phase.html
     // we need convert all negative rhs to positive
     // to do that, we first need to solve the auxiliary lp
-    return solveLP<M, N>(tab);
+    auto s = solveLP<M, N>(tab);
+    return s;
   }
 
 private:
@@ -196,6 +199,8 @@ private:
     return true;
   }
   bool solveAuxiliary(size_t pivot_row) {
+    std::cout << "solve aux\n";
+
     Matrix<float, M + 1, N + M + 3> aux_tab; // one more variable
     size_t aux_var = N + M;                  // the new variable idx
     for (size_t i = 0; i < M; ++i) {
@@ -211,7 +216,8 @@ private:
     for (size_t i = 0; i < M; ++i) {
       aux_tab.get(i, N + M + 2) = tab.get(i, N + M + 1);
     }
-
+    std::ofstream f("b.txt");
+    f << tab;
     pivotVar(pivot_row, aux_var);
 
     aux_tab.rowMultiplication(pivot_row, -1);
@@ -245,6 +251,9 @@ private:
         tab.rowAddition(M, i, -tab.at(M, j));
       }
     }
+
+    // std::cout << vars;
+    // std::cout << tab;
     return true;
   }
 

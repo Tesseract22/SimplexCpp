@@ -35,15 +35,39 @@ public:
 
   friend std::ostream &operator<<(std::ostream &stream, const Array<T, N> &s) {
 
-    std::fprintf(stderr, "\n");
+    char out[(N + 1) * 20 + 100];
+
+    size_t position = 0;
+    position += std::sprintf(out + position, "\n");
+
+    // index header
     for (size_t j = 0; j < N; ++j) {
-      std::fprintf(stderr, "%7zu", j);
+      position += std::sprintf(out + position, "%20zu", j);
     }
-    std::fprintf(stderr, "\n");
+    position += std::sprintf(out + position, "\n");
+    stream << out;
+    position = 0;
+
+    // provided header
+
+    if (s.header) {
+      for (size_t j = 0; j < N; ++j) {
+        position += std::sprintf(out + position, "%20s",
+                                 s.header->at(j).substr(0, 20).data());
+      }
+      position += std::sprintf(out + position, "\n");
+      stream << out;
+      position = 0;
+    }
+
     for (size_t j = 0; j < N; ++j) {
-      std::fprintf(stderr, "%7.3f", s.at(j));
+      position += std::sprintf(out + position, "%20f", s.at(j));
     }
-    std::fprintf(stderr, "\n");
+    position += std::sprintf(out + position, "\n");
+
+    stream << out;
+    position = 0;
+
     return stream;
   }
 
@@ -83,6 +107,7 @@ public:
     }
   }
 
+  Array<std::string, N> *header = nullptr;
   size_t save(const std::string &path);
 
 private:
