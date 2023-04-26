@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <ostream>
 #include <set>
@@ -19,8 +20,9 @@ public:
   Simplex(const Array<float, N> &object, const Matrix<float, M, N> &ineq_lhs,
           const Array<float, M> &ineq_rhs,
           Array<bool, M> is_less_than = SIMPLEX_DEFAULT_LEQ_ARR(M),
-          bool is_maximize = true)
-      : is_less_than(is_less_than), is_maximize(is_maximize) {
+          bool is_maximize = true, ssize_t iterations = -1)
+      : is_less_than(is_less_than), is_maximize(is_maximize),
+        iterations(iterations) {
     vars.row_basic = Array<size_t, M>(-1);
     solution = solveLP(object, ineq_lhs, ineq_rhs);
   }
@@ -48,7 +50,7 @@ public:
     }
   };
   struct Solution {
-    float res = 0;
+    float res = -std::numeric_limits<float>::max();
     bool success = false;
     Array<float, N> variables;
     size_t iterations = 0;
@@ -68,22 +70,36 @@ public:
   template <size_t TM, size_t TN>
   Solution solveLP(Matrix<float, TM + 1, TN + TM + 2> &tab) {
     std::cout << "solve lp\n";
+#ifdef SIMPLEX_DEBUG
     std::cout << tab;
+#endif
     Solution s;
+    s.res = -std::numeric_limits<float>::max();
+    std::cout << s;
     while (true) {
       s.iterations += 1;
       std::cout << "iterations: " << s.iterations << std::endl;
+      //   std::cout << tab;
       //   std::cout << s << std::endl;
-      if (s.res ==
-          tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_maximize)) {
+      for (size_t j = 0; j < TN + TM + 2; ++j)
+        if (Approx::isApporxZero<float>(tab.at(TM, j))) {
+          //   std::cout << "zeroing: " << j << '\n';
+          tab(TM, j) = 0;
+        }
+
+      if (s.res == tab.at(TM, TN + TM + 1)) {
         is_cycling = true;
         std::cout << "cycling\n";
+      } else {
+        is_cycling = false;
       }
-      s.res = tab.at(TM, TN + TM + 1) * SIMPLEX_REVERSE_SIGN(is_maximize);
+
+      s.res = tab.at(TM, TN + TM + 1);
+
       std::cout << "res " << s.res << std::endl;
-      std::cout << tab;
-      if (s.iterations == 10)
-        break;
+      if (s.iterations > iterations)
+        return s;
+
       //   std::cout << vars;a
       size_t pivot_col =
           getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
@@ -154,6 +170,7 @@ public:
     // we need convert all negative rhs to positive
     // to do that, we first need to solve the auxiliary lp
     auto s = solveLP<M, N>(tab);
+    s.res *= SIMPLEX_REVERSE_SIGN(is_maximize);
     return s;
   }
 
@@ -222,38 +239,38 @@ private:
     std::cout << "solve aux\n";
 
     Matrix<float, M + 1, N + M + 3> aux_tab; // one more variable
-    size_t aux_var = N + M;                  // the new variable idx
+    size_t aux_var = N + M;
+    // copy the original matrix                  // the new variable idx
     for (size_t i = 0; i < M; ++i) {
       for (size_t j = 0; j < aux_var; ++j) {
         aux_tab.get(i, j) = tab.at(i, j);
       }
     }
+    // for all row, -x0
     for (size_t i = 0; i < M; ++i) {
       aux_tab.get(i, aux_var) = -1;
     }
+    // the objective function is minimize x0
     aux_tab.get(M, aux_var) = 1;
     aux_tab.get(M, aux_var + 1) = 1;
+    // copy the rhs
     for (size_t i = 0; i < M; ++i) {
       aux_tab.get(i, N + M + 2) = tab.get(i, N + M + 1);
     }
-    std::ofstream f("b.txt");
-    f << tab;
+    // perform the aux pivot
     pivotVar(pivot_row, aux_var);
-
     aux_tab.rowMultiplication(pivot_row, -1);
     for (size_t i = 0; i < M; ++i) {
       if (i != pivot_row)
         aux_tab.rowAddition(i, pivot_row, 1);
     }
     aux_tab.rowAddition(M, pivot_row, -1);
-    //   aux_tab.debugPrint();
-    //   std::cout << vars;
     Solution solution = solveLP<M, N + 1>(aux_tab);
-    //   std::cout << solution << '\n';
+    solution.res *= -1; // because we want to minimize the problem
     std::cout << solution;
-    if (!solution.success || !Approx::isApproxEqual<float>(
-                                 solution.res, 0, SIMPLEX_FLOAT_PRECISION)) {
-      std::cout << "faillllllll\n";
+    if (!Approx::isApproxEqual<float>(solution.res, 0,
+                                      SIMPLEX_FLOAT_PRECISION)) {
+      std::cout << "fail in aux\n";
       return false;
     }
     // place it back to result
@@ -288,8 +305,8 @@ private:
                                        SIMPLEX_FLOAT_PRECISION)) {
         min = m.at(TM, j);
         col = j;
-        // std::cout << "new pivot col: " << col << '\n';
-        // std::cout << "value: " << min << '\n';
+        std::cout << "new pivot col: " << col << '\n';
+        std::cout << "value: " << min << '\n';
         if (is_cycling)
           break;
       }
@@ -316,14 +333,12 @@ private:
     for (auto &it : vars.basic_vars) {
       size_t i = it.second;
       float ratio;
-      std::cout << "at row: " << i << '\n';
       if (Approx::isDefGreaterThan<float>(m.at(i, pivot_col), 0) &&
           (ratio = m.at(i, TN + TM + 1) / m.at(i, pivot_col)) >= 0 &&
           Approx::isDefLessThan<float>(ratio, min, SIMPLEX_FLOAT_PRECISION)) {
-        std::cout << "min: " << min << ' ' << "ratio: " << ratio << '\n';
         min = ratio;
         row = i;
-        // std::cout << "new pivot row: " << row << '\n';
+        std::cout << "new pivot row: " << row << '\n';
         if (is_cycling)
           break;
       }
@@ -352,4 +367,5 @@ private:
   bool is_cycling = false;
   size_t prev_enter_var = M + N + 3;
   size_t prev_exiting_var = M + N + 3;
+  ssize_t iterations = -1;
 }; // namespace Simplex

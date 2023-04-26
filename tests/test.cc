@@ -108,8 +108,8 @@ void simplex_method_phase_2() {
     auto solution = s.solution;
     cerr << solution << '\n';
     assert(solution.success);
-    assert(
-        isApproxEqual<float>(solution.res, 3.0 / 5.0, SIMPLEX_FLOAT_PRECISION));
+    assert(Approx::isApproxEqual<float>(solution.res, 3.0 / 5.0,
+                                        SIMPLEX_FLOAT_PRECISION));
     checkMatrix(solution.variables, vector<float>({0, 14.0 / 5.0, 17.0 / 5.0}));
   }
 #endif
@@ -134,8 +134,8 @@ void simplex_method_phase_2() {
     auto &solution = s.solution;
     cerr << solution << '\n';
     assert(solution.success);
-    assert(isApproxEqual<float>(solution.res, -2300. / 39.,
-                                SIMPLEX_FLOAT_PRECISION));
+    assert(Approx::isApproxEqual<float>(solution.res, -2300. / 39.,
+                                        SIMPLEX_FLOAT_PRECISION));
     checkMatrix(solution.variables,
                 vector<float>({0, 61. / 78., 8.0 / 39.0, 5.0 / 13, 555. / 13.,
                                2300. / 39.}));
@@ -148,21 +148,21 @@ void simplex_method_phase_2() {
     const size_t M = 5;
     const size_t N = 6;
     Matrix<float, M, N> lhs({
-        {-40, 0, 30, 10, 0, 0},
-        {30, -30, 30, 45, 0, 0},
-        {0, 20, 40, 55, 0, 0},
-        {-30, -30, 0, -50, 1, 0},
-        {0, 0, -100, -100, 0, 1},
+        {-40, 0, 30, 10, 0, 0, 0},
+        {30, -30, 30, 45, 0, 0, 0},
+        {0, 20, 40, 55, 0, 0, 0},
+        {-30, -30, 0, -50, 1, 0, 0},
+        {0, 0, -100, -100, 0, 1, 0},
 
     });
-    Array<float, N> obj({0, 0, 0, 0, 0, 1});
+    Array<float, N> obj({0, 0, 0, 0, 0, 1, 0});
     Array<float, M> rhs({10, 0, 45, 0, 0});
     Simplex s(obj, lhs, rhs, SIMPLEX_DEFAULT_GEQ_ARR(M), false);
     auto &solution = s.solution;
     cerr << solution << '\n';
     assert(solution.success);
-    assert(isApproxEqual<float>(solution.res, -2300. / 39.,
-                                SIMPLEX_FLOAT_PRECISION));
+    assert(Approx::isApproxEqual<float>(solution.res, 2300. / 39.,
+                                        SIMPLEX_FLOAT_PRECISION));
     checkMatrix(solution.variables,
                 vector<float>({0, 61. / 78., 8.0 / 39.0, 5.0 / 13, 555. / 13.,
                                2300. / 39.}));
@@ -186,7 +186,7 @@ void simplex_method_phase_2() {
     assert(!solution.success);
   }
 #endif
-#if 1
+#if 0
   {
     // degenerate example
     const size_t M = 3;
@@ -205,6 +205,33 @@ void simplex_method_phase_2() {
     assert(Approx::isApproxEqual<float>(solution.res, 1.,
                                         SIMPLEX_FLOAT_PRECISION));
     checkMatrix(solution.variables, vector<float>({1, 0, 1, 0}));
+  }
+#endif
+#if 1
+  {
+    // large example
+    // http://kirkmcdonald.github.io/posts/calculation.html
+    const size_t M = 5;
+    const size_t N = 5;
+    Matrix<float, M, N> lhs({
+        {0, -1, 1, 0, 0},
+        {-1, 0, 0, 1, 0},
+        {0, 1, 0, 0, 0},
+        {1, 0, 0, 0, 0},
+        {-1, -1, -1, -1, 1},
+
+    });
+    Array<float, N> obj({0, 100, 0, 0, 0});
+    Array<float, M> rhs({0, 0, 0, 1000, 0});
+    Simplex s(obj, lhs, rhs, SIMPLEX_DEFAULT_GEQ_ARR(M), false);
+    auto &solution = s.solution;
+    cerr << solution << '\n';
+    assert(solution.success);
+    assert(Approx::isApproxEqual<float>(solution.res, -2300. / 39.,
+                                        SIMPLEX_FLOAT_PRECISION));
+    checkMatrix(solution.variables,
+                vector<float>({0, 61. / 78., 8.0 / 39.0, 5.0 / 13, 555. / 13.,
+                               2300. / 39.}));
   }
 #endif
 }

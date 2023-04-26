@@ -19,9 +19,9 @@ install: src/* includes/*
 	mkdir ${INSTALL_PATH}
 	cp -r includes/* ${INSTALL_PATH}
 test: bin/test
-
+	$^
 bin/test: tests/* includes/*
-	${CXX} tests/test.cc ${INCLUDES} ${TEST_UTILS} ${DEBUG} -o $@ && $@
+	${CXX} tests/test.cc ${INCLUDES} ${TEST_UTILS} ${DEBUG} -o $@
 
 
 bin/simplex-debug: src/* includes/*
