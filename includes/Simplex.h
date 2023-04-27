@@ -11,10 +11,30 @@
 #include <ostream>
 #include <set>
 #include <vector>
+#define SIMPLEX_RED "\x1b[31m"
+#define SIMPLEX_GREEN "\x1b[32m"
+#define SIMPLEX_YELLOW "\x1b[33m"
+#define SIMPLEX_BLUE "\x1b[34m"
+#define SIMPLEX_MAGENTA "\x1b[35m"
+#define SIMPLEX_CYAN "\x1b[36m"
+#define SIMPLEX_RESET "\x1b[0m"
 
 #define SIMPLEX_REVERSE_SIGN(b) (b ? 1 : -1)
 #define SIMPLEX_DEFAULT_LEQ_ARR(M) Array<bool, M>(true)
 #define SIMPLEX_DEFAULT_GEQ_ARR(M) Array<bool, M>(false)
+
+#ifdef SIMPLEX_DEBUG
+#define LOG(msg) std::cout << msg;
+#define LOGC(msg, color) std::cout << color << msg << SIMPLEX_RESET;
+#else
+#define LOG(msg)                                                               \
+  do {                                                                         \
+  } while (0);
+#define LOGC(msg, color)                                                       \
+  do {                                                                         \
+  } while (0);
+#endif
+
 template <size_t M, size_t N> class Simplex {
 public:
   Simplex(const Array<float, N> &object, const Matrix<float, M, N> &ineq_lhs,
@@ -55,9 +75,11 @@ public:
     Array<float, N> variables;
     size_t iterations = 0;
     friend std::ostream &operator<<(std::ostream &stream, const Solution &s) {
-      stream << "Success: " << s.success << '\n';
-      stream << "Result: " << s.res << '\n';
-      stream << "Iterations: " << s.iterations << '\n';
+      stream << SIMPLEX_YELLOW << "Solution: " << SIMPLEX_RESET " ";
+      stream << (s.success ? SIMPLEX_GREEN : SIMPLEX_RED)
+             << "Success: " << s.success << ' ';
+      stream << "Result: " << s.res << ' ';
+      stream << "Iterations: " << s.iterations << SIMPLEX_RESET "\n";
       for (size_t i = 0; i < N; ++i) {
         stream << "x" << i << ": " << s.variables[i] << ' ';
       }
@@ -68,17 +90,14 @@ public:
   Solution solution;
 
   template <size_t TM, size_t TN>
+
   Solution solveLP(Matrix<float, TM + 1, TN + TM + 2> &tab) {
-    std::cout << "solve lp\n";
-#ifdef SIMPLEX_DEBUG
-    std::cout << tab;
-#endif
+    LOGC("starting to solve...\n\n", SIMPLEX_GREEN)
     Solution s;
     s.res = -std::numeric_limits<float>::max();
-    std::cout << s;
     while (true) {
       s.iterations += 1;
-      std::cout << "iterations: " << s.iterations << std::endl;
+      LOGC("Iterations: " << s.iterations << '\n', SIMPLEX_BLUE)
       //   std::cout << tab;
       //   std::cout << s << std::endl;
       for (size_t j = 0; j < TN + TM + 2; ++j)
@@ -89,22 +108,24 @@ public:
 
       if (s.res == tab.at(TM, TN + TM + 1)) {
         is_cycling = true;
-        std::cout << "cycling\n";
+        LOGC("Cycling!\n", SIMPLEX_RED)
       } else {
         is_cycling = false;
       }
 
       s.res = tab.at(TM, TN + TM + 1);
 
-      std::cout << "res " << s.res << std::endl;
-      if (s.iterations > iterations)
+      LOGC("Result after iterations: " << s.iterations << '\n', SIMPLEX_BLUE)
+      if (s.iterations > iterations) {
+        LOGC("Too many iterations. Exiting\n\n", SIMPLEX_RED)
         return s;
+      }
 
       //   std::cout << vars;a
       size_t pivot_col =
           getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
       if (pivot_col == TN + TM + 2) {
-        std::cout << "success\n";
+        LOGC("Simplex method find a solution. Exiting\n\n", SIMPLEX_RED)
         s.success = true;
         // std::cout << s << std::endl;
         for (auto &it : vars.basic_vars) {
@@ -115,20 +136,17 @@ public:
       }
       size_t pivot_row = getPivotRow<TM, TN>(tab, pivot_col, vars);
       if (pivot_row == TM + 1) {
-        std::cout << "unbounded\n";
+        LOGC("Simpelx method is unbound. Exiting\n\n.", SIMPLEX_RED)
         return s;
       }
       float a = tab.at(TM, pivot_col);
       size_t exiting_var = vars.row_basic[pivot_row];
       //   std::cout << "bottom: " << a << std::endl;
 
-      std::cout << "entering: " << pivot_col << "  exiting: " << exiting_var
-                << " pivot row: " << pivot_row << '\n';
-      if (exiting_var == prev_enter_var && pivot_col == prev_exiting_var) {
-        // std::cout << "cycling\n";
-        is_cycling = true;
-        // goto done;
-      }
+      LOGC("entering var (col): " << pivot_col
+                                  << "; exiting var (col): " << exiting_var
+                                  << "; pivot row: " << pivot_row << '\n',
+           SIMPLEX_YELLOW)
 
       pivotVar(pivot_row, pivot_col);
       pivotMatrix<TM, TN>(tab, pivot_row, pivot_col);
@@ -236,7 +254,7 @@ private:
     return true;
   }
   bool solveAuxiliary(size_t pivot_row) {
-    std::cout << "solve aux\n";
+    LOGC("starting to solve aux...\n", SIMPLEX_GREEN)
 
     Matrix<float, M + 1, N + M + 3> aux_tab; // one more variable
     size_t aux_var = N + M;
@@ -270,7 +288,7 @@ private:
     std::cout << solution;
     if (!Approx::isApproxEqual<float>(solution.res, 0,
                                       SIMPLEX_FLOAT_PRECISION)) {
-      std::cout << "fail in aux\n";
+      LOGC("Failed to solve auxiliary matrix! :(\n\n", SIMPLEX_RED)
       return false;
     }
     // place it back to result
@@ -293,6 +311,7 @@ private:
 
     // std::cout << vars;
     // std::cout << tab;
+    LOGC("Successfully solved auxiliary matrix! :)\n\n", SIMPLEX_RED)
     return true;
   }
 
@@ -305,12 +324,16 @@ private:
                                        SIMPLEX_FLOAT_PRECISION)) {
         min = m.at(TM, j);
         col = j;
-        std::cout << "new pivot col: " << col << '\n';
-        std::cout << "value: " << min << '\n';
         if (is_cycling)
           break;
       }
     }
+    LOG("Choosing pivot column ")
+    LOGC(col, SIMPLEX_YELLOW)
+    LOG(" with value ")
+    LOGC(min, SIMPLEX_YELLOW)
+    LOG(" (pivot column with the most negative value, unless cycling)\n")
+
     return col;
   }
   /**
@@ -338,11 +361,16 @@ private:
           Approx::isDefLessThan<float>(ratio, min, SIMPLEX_FLOAT_PRECISION)) {
         min = ratio;
         row = i;
-        std::cout << "new pivot row: " << row << '\n';
         if (is_cycling)
           break;
       }
     }
+
+    LOG("Choosing pivot row ")
+    LOGC(row, SIMPLEX_YELLOW)
+    LOG(" with value ")
+    LOGC(min, SIMPLEX_YELLOW)
+    LOG(" (pivot row with the smallest non-negative value, unless cycling)\n")
     return row;
   }
 
