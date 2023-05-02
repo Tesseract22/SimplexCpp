@@ -10,6 +10,7 @@
 #include <map>
 #include <ostream>
 #include <set>
+#include <stdexcept>
 #include <vector>
 #define SIMPLEX_RED "\x1b[31m"
 #define SIMPLEX_GREEN "\x1b[32m"
@@ -35,7 +36,7 @@
   do {                                                                         \
   } while (0);
 #endif
-typedef float F;
+typedef double F;
 template <size_t M, size_t N> class Simplex {
 public:
   Simplex(const Array<F, N> &object, const Matrix<F, M, N> &ineq_lhs,
@@ -92,43 +93,65 @@ public:
 
   template <size_t TM, size_t TN>
 
-  Solution solveLP(Matrix<F, TM, TN> &tab) {
+  Solution solveLP(Matrix<F, TM, TN> &lp_tab) {
     LOGC("starting to solve...\n\n", SIMPLEX_GREEN)
     Solution s;
     s.res = -std::numeric_limits<F>::max();
     while (true) {
       s.iterations += 1;
       LOGC("Iterations: " << s.iterations << '\n', SIMPLEX_BLUE)
-      //   LOG(tab)
-      //   LOG(vars)
+      for (size_t i = 0; i < TM - 1; ++i) {
+        if (lp_tab.at(i, TN - 1) < 0) {
+          LOG("rhs < 0: " << lp_tab.at(i, TN - 1) << ' ' << i << '\n');
+        }
+      }
 
-      if (s.res == tab.at(TM - 1, TN - 1)) {
+      if (s.res == lp_tab.at(TM - 1, TN - 1)) {
         is_cycling = true;
         LOGC("Cycling!\n", SIMPLEX_RED)
       } else {
         is_cycling = false;
       }
+      LOGC("last row of the tab: \n", SIMPLEX_YELLOW);
+      for (size_t j = 0; j < N + M + 1; ++j) {
+        LOG(lp_tab.at(TM - 1, j) << ' ')
+      }
+      LOG('\n')
 
-      s.res = tab.at(TM - 1, TN - 1);
+      for (size_t i = 0; i < TM; ++i) {
+        for (size_t j = 0; j < TN; ++j) {
+          if (lp_tab.at(i, j) >= 100000) {
+            LOG("???????? " << i << ' ' << j << ' ' << lp_tab.at(i, j) << '\n')
+          }
+        }
+      }
+
+      s.res = lp_tab.at(TM - 1, TN - 1);
 
       LOGC("Result after iteration: " << s.res << '\n', SIMPLEX_BLUE)
 
       //   std::cout << vars;a
       size_t pivot_col =
-          getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
+          getPivotCol<TM, TN>(lp_tab, vars); // this would enter the basic vars
       if (pivot_col == TN || s.iterations > iterations) {
         LOGC("Simplex method find a solution. Exiting\n\n", SIMPLEX_RED)
         s.success = true;
         // std::cout << s << std::endl;
         for (auto &it : vars.basic_vars) {
           if (it.first < TN - TM) {
-            s.variables[it.first] = tab.at(it.second, TN - 1);
+            s.variables[it.first] = lp_tab.at(it.second, TN - 1);
           }
         }
         return s;
       }
-      size_t pivot_row = getPivotRow<TM, TN>(tab, pivot_col, vars);
+      size_t pivot_row = getPivotRow<TM, TN>(lp_tab, pivot_col, vars);
       if (pivot_row == TM) {
+        for (auto &it : vars.basic_vars) {
+          if (it.first < TN - TM) {
+            // LOG(it.first << ' ' << tab.at(it.second, TN - 1) << '\n')
+            s.variables[it.first] = lp_tab.at(it.second, TN - 1);
+          }
+        }
         LOGC("Simpelx method is unbound. Exiting\n\n.", SIMPLEX_RED)
         return s;
       }
@@ -140,7 +163,7 @@ public:
            SIMPLEX_YELLOW)
 
       pivotVar(pivot_row, pivot_col);
-      pivotMatrix<TM, TN>(tab, pivot_row, pivot_col);
+      pivotMatrix<TM, TN>(lp_tab, pivot_row, pivot_col);
       prev_enter_var = pivot_col;
       prev_exiting_var = exiting_var;
     }
@@ -271,12 +294,10 @@ private:
     for (size_t j = 0; j < old_rhs; ++j) {
       vars.non_basic_vars.insert(j);
     }
-    LOG(vars)
     Solution aux_solution = solveLP(aux_tab);
     LOG("auxiliary solution: : " << aux_solution)
     if (!aux_solution.success)
       return false;
-    LOG(vars)
 
     for (size_t i = 0; i < old_obj; ++i) {
       // copy the lhs
@@ -289,12 +310,25 @@ private:
     for (size_t j = old_rhs; j < aux_rhs; ++j) {
       vars.non_basic_vars.erase(j);
     }
+    LOGC("last row of the new matrix: \n", SIMPLEX_YELLOW);
+    for (size_t j = 0; j < N + M + 1; ++j) {
+      LOG(tab.at(M, j) << ' ')
+    }
+    LOG('\n')
     for (size_t i = 0; i < old_obj; ++i) {
       size_t j = vars.row_basic.at(i);
+      if (j < M + N)
+        throw std::runtime_error(
+            "the auxiliary variables is still in the basis. failed.");
+      LOG("changing objective: " << i << ' ' << j << ' ' << tab.at(old_obj, j)
+                                 << '\n')
       tab.rowAddition(old_obj, i, -tab.at(old_obj, j));
     }
-    LOG(vars)
-    LOGC("TODO\n", SIMPLEX_RED)
+    LOGC("after last row of the new matrix: \n", SIMPLEX_YELLOW);
+    for (size_t j = 0; j < N + M + 1; ++j) {
+      LOG(tab.at(M, j) << ' ')
+    }
+    LOG('\n')
     // std::cout << vars;
     // std::cout << tab;
     // LOGC("Successfully solved auxiliary matrix! :)\n\n", SIMPLEX_RED)
@@ -371,11 +405,13 @@ private:
     LOG("pivot element: ")
     LOGC(m.at(pivot_row, pivot_col) << '\n', SIMPLEX_CYAN)
     for (size_t i = 0; i < TM; ++i) {
-      if (i == pivot_row)
+      if (i == pivot_row || Approx::isApporxZero(m.at(pivot_row, pivot_col),
+                                                 SIMPLEX_FLOAT_PRECISION))
         continue;
       F r = m.at(i, pivot_col) / m.at(pivot_row, pivot_col);
       m.rowAddition(i, pivot_row, -r);
     }
+    LOG('\n')
     //   m.debugPrint();
   }
   Vars vars;

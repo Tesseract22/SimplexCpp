@@ -9,7 +9,7 @@
 #include <string>
 using namespace std;
 int main() {
-  Matrix<double, 2, 7> a({
+  Matrix<double, 3, 7> a({
       {1, 1, 1, 1, 1, 1, 1},
       {2, 2, 2, 2, 2, 2, 2},
       {3, 3, 3, 3, 3, 3, 3},

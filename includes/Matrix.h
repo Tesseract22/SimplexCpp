@@ -161,7 +161,6 @@ public:
     size_t j;
     __m256d mul_vec = _mm256_set1_pd(mul);
     for (j = 0; j < N / 4 * 4; j += 4) {
-      std::cout << index(dest_row, j) << std::endl;
       __m256d dest_vec = _mm256_load_pd(arr_ + index(dest_row, j));
       __m256d other_vec = _mm256_load_pd(arr_ + index(other_row, j));
       __m256d result_vec =
@@ -197,7 +196,7 @@ private:
   size_t index(size_t row, size_t col) const {
     return row * ALIGN_COL(N) + col;
   }
-  T arr_[M * ALIGN_COL(N)] = {0};
+  alignas(32) T arr_[M * ALIGN_COL(N)] = {0};
   //   T *arr_ = new T[ALIGN_COL(N) * M]();
 };
 

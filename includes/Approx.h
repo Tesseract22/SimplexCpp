@@ -4,7 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
-#define SIMPLEX_FLOAT_PRECISION 1e-4
+#define SIMPLEX_FLOAT_PRECISION 1e-7
 
 namespace Approx {
 template <typename TReal>
