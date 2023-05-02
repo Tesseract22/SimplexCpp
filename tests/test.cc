@@ -81,6 +81,7 @@ void simplex_method_basics() {
     auto solution = s.solution;
     cerr << solution << '\n';
     assert(solution.success);
+    cerr << solution.res << '\n';
     assert(solution.res == 64);
     checkMatrix(solution.variables, vector<float>({8, 0, 0}));
   }
@@ -141,21 +142,21 @@ void simplex_method_phase_2() {
                                2300. / 39.}));
   }
 #endif
-#if 0
+#if 1
   {
     // large example
     // http://kirkmcdonald.github.io/posts/calculation.html
     const size_t M = 5;
     const size_t N = 6;
     Matrix<float, M, N> lhs({
-        {-40, 0, 30, 10, 0, 0, 0},
-        {30, -30, 30, 45, 0, 0, 0},
-        {0, 20, 40, 55, 0, 0, 0},
-        {-30, -30, 0, -50, 1, 0, 0},
-        {0, 0, -100, -100, 0, 1, 0},
+        {-40, 0, 30, 10, 0, 0},
+        {30, -30, 30, 45, 0, 0},
+        {0, 20, 40, 55, 0, 0},
+        {-30, -30, 0, -50, 1, 0},
+        {0, 0, -100, -100, 0, 1},
 
     });
-    Array<float, N> obj({0, 0, 0, 0, 0, 1, 0});
+    Array<float, N> obj({0, 0, 0, 0, 0, 1});
     Array<float, M> rhs({10, 0, 45, 0, 0});
     Simplex s(obj, lhs, rhs, SIMPLEX_DEFAULT_GEQ_ARR(M), false);
     auto &solution = s.solution;
@@ -229,18 +230,18 @@ void simplex_method_phase_2() {
     cerr << solution << '\n';
   }
 #endif
-#if 1
+#if 0
   {
     // large example
     // http://kirkmcdonald.github.io/posts/calculation.html
     const size_t M = 4;
     const size_t N = 4;
-    Matrix<float, M, N> lhs;
+    Matrix<double, M, N> lhs;
     lhs.get(0, 0) = 1;
     lhs.get(0, 1) = -1;
     lhs.get(1, 1) = 1;
-    Array<float, N> obj({10, 0});
-    Array<float, M> rhs({0, 100});
+    Array<double, N> obj({10, 0});
+    Array<double, M> rhs({0, 100});
     cout << lhs << obj << rhs << '\n';
     Simplex s(obj, lhs, rhs, SIMPLEX_DEFAULT_GEQ_ARR(M), false);
     auto &solution = s.solution;

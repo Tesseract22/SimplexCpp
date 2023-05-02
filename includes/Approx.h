@@ -4,7 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
-#define SIMPLEX_FLOAT_PRECISION 1e-6
+#define SIMPLEX_FLOAT_PRECISION 1e-4
 
 namespace Approx {
 template <typename TReal>
@@ -17,9 +17,6 @@ isApproxEqual(TReal a, TReal b,
     // std::cout << "true: " << diff << std::endl;
     return true;
   }
-
-  if (diff < std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
-    return true;
 
   return false;
 }
@@ -47,9 +44,6 @@ isDefLessThan(TReal a, TReal b,
   if (std::fabs(diff) > tolerance)
     return true;
 
-  if (std::fabs(diff) > std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
-    return true;
-
   return false;
 }
 template <typename TReal>
@@ -60,9 +54,6 @@ isDefGreaterThan(TReal a, TReal b,
   if (diff < 0)
     return false;
   if (std::fabs(diff) > tolerance)
-    return true;
-
-  if (std::fabs(diff) > std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
     return true;
 
   return false;

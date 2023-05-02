@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <immintrin.h>
 #include <initializer_list>
 #include <iomanip>
 #include <iostream>
@@ -10,17 +11,8 @@
 #include <type_traits>
 #include <vector>
 #include <xmmintrin.h>
-#define PADDING 4
+#define PADDING 8
 #define ALIGN_COL(N) (((N + PADDING - 1) / PADDING * PADDING))
-
-#define DEFER_RETURN_VAL(value)                                                \
-  do {                                                                         \
-    result = value;                                                            \
-    goto defer_return;                                                         \
-  } while (0);
-#define DEFER_RETURN_VOID goto defer_return
-#define DEFER_POINT                                                            \
-  defer_return:
 
 // ssize_t readData(FILE* f, void* buffer) {
 //   const static block_size = 1024;
@@ -66,8 +58,14 @@ public:
                                   const Matrix<T, M, N> &s) {
 
     char out[(N + 1) * 20 + 100];
-    std::string precision_format;
-    precision_format += "%20." + std::to_string(4) + "f";
+    int space = 10;
+    int p = 3;
+    const static auto formatter = [space](const char *type) -> std::string {
+      return "%" + std::to_string(space) + type;
+    };
+    const static auto precison = [space, p]() -> std::string {
+      return "%" + std::to_string(space) + "." + std::to_string(p) + "f";
+    };
 
     size_t position = 0;
     position += std::sprintf(out + position, "\n");
@@ -75,9 +73,9 @@ public:
     // index header
     position += std::sprintf(out + position, "%4s", "");
     if (s.row_header)
-      position += std::sprintf(out + position, "%20s", "");
+      position += std::sprintf(out + position, formatter("").data(), "");
     for (size_t j = 0; j < N; ++j) {
-      position += std::sprintf(out + position, "%20zu", j);
+      position += std::sprintf(out + position, formatter("zu").data(), j);
     }
     position += std::sprintf(out + position, "\n");
     stream << out;
@@ -88,9 +86,9 @@ public:
     if (s.col_header) {
       position += std::sprintf(out + position, "%4s", "");
       if (s.row_header)
-        position += std::sprintf(out + position, "%20s", "");
+        position += std::sprintf(out + position, formatter("").data(), "");
       for (size_t j = 0; j < N; ++j) {
-        position += std::sprintf(out + position, "%20s",
+        position += std::sprintf(out + position, formatter("s").data(),
                                  s.col_header->at(j).substr(0, 20).data());
       }
     }
@@ -101,11 +99,10 @@ public:
     for (size_t i = 0; i < M; ++i) {
       position += std::sprintf(out + position, "%4zu", i);
       if (s.row_header)
-        position += std::sprintf(out + position, "%20s",
+        position += std::sprintf(out + position, formatter("s").data(),
                                  s.row_header->at(i).substr(0, 20).data());
       for (size_t j = 0; j < N; ++j) {
-        position +=
-            std::sprintf(out + position, precision_format.data(), s.at(i, j));
+        position += std::sprintf(out + position, precison().data(), s.at(i, j));
       }
       position += std::sprintf(out + position, "\n");
 
@@ -143,6 +140,42 @@ public:
       __m128 result_vec =
           _mm_mul_ps(_mm_load_ps(arr_ + index(row, j)), mul_vec);
       _mm_store_ps(arr_ + index(row, j), result_vec);
+    }
+    for (; j < N; ++j) {
+      arr_[index(row, j)] *= factor;
+    }
+  }
+
+  template <class Q = T>
+  typename std::enable_if<std::is_same<Q, double>::value, void>::type
+  rowAddition(size_t dest_row, size_t other_row, T mul) {
+    if (mul == 0)
+      return;
+    size_t j;
+    __m256d mul_vec = _mm256_set1_pd(mul);
+    for (j = 0; j < N / 4 * 4; j += 4) {
+      std::cout << index(dest_row, j) << std::endl;
+      __m256d dest_vec = _mm256_load_pd(arr_ + index(dest_row, j));
+      __m256d other_vec = _mm256_load_pd(arr_ + index(other_row, j));
+      __m256d result_vec =
+          _mm256_add_pd(dest_vec, _mm256_mul_pd(other_vec, mul_vec));
+      _mm256_store_pd(arr_ + index(dest_row, j), result_vec);
+    }
+    for (; j < N; ++j) {
+      arr_[index(dest_row, j)] += arr_[index(other_row, j)] * mul;
+    }
+  }
+
+  template <class Q = T>
+  typename std::enable_if<std::is_same<Q, double>::value, void>::type
+  rowMultiplication(size_t row, T factor) {
+    size_t j;
+    __m256d mul_vec = _mm256_set1_pd(factor);
+    for (j = 0; j < N / 4 * 4; j += 4) {
+
+      __m256d result_vec =
+          _mm256_mul_pd(_mm256_load_pd(arr_ + index(row, j)), mul_vec);
+      _mm256_store_pd(arr_ + index(row, j), result_vec);
     }
     for (; j < N; ++j) {
       arr_[index(row, j)] *= factor;

@@ -1,7 +1,7 @@
-CXX=g++ -std=c++2a 
+CXX=g++ -std=c++2a -mavx 
 INCLUDES=-Iincludes
 TEST_UTILS=-Itests
-DEBUG=-g -O0
+DEBUG=-g -O0 -DSIMPLEX_DEBUG
 RELEASE=-O3
 OBJ_FLASG=-c
 INSTALL_PATH=/usr/local/include/SimplexLP/

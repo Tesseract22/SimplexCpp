@@ -8,4 +8,12 @@
 #include <sstream>
 #include <string>
 using namespace std;
-int main() { std::cout << Approx::isDefLessThan<float>(1e-5, 1e-4) << '\n'; }
+int main() {
+  Matrix<double, 2, 7> a({
+      {1, 1, 1, 1, 1, 1, 1},
+      {2, 2, 2, 2, 2, 2, 2},
+      {3, 3, 3, 3, 3, 3, 3},
+  });
+  a.rowAddition(0, 1, 2);
+  cout << a;
+}
