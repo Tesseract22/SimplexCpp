@@ -46,7 +46,6 @@ public:
         iterations(iterations) {
     vars.row_basic = Array<size_t, M>(-1);
     solution = solveLP(object, ineq_lhs, ineq_rhs);
-    LOG(tab)
   }
 
   struct Vars {
@@ -113,15 +112,11 @@ public:
       s.res = tab.at(TM - 1, TN - 1);
 
       LOGC("Result after iteration: " << s.res << '\n', SIMPLEX_BLUE)
-      if (s.iterations > iterations) {
-        LOGC("Too many iterations. Exiting\n\n", SIMPLEX_RED)
-        return s;
-      }
 
       //   std::cout << vars;a
       size_t pivot_col =
           getPivotCol<TM, TN>(tab, vars); // this would enter the basic vars
-      if (pivot_col == TN) {
+      if (pivot_col == TN || s.iterations > iterations) {
         LOGC("Simplex method find a solution. Exiting\n\n", SIMPLEX_RED)
         s.success = true;
         // std::cout << s << std::endl;
@@ -137,9 +132,7 @@ public:
         LOGC("Simpelx method is unbound. Exiting\n\n.", SIMPLEX_RED)
         return s;
       }
-      F a = tab.at(TM, pivot_col);
       size_t exiting_var = vars.row_basic[pivot_row];
-      //   std::cout << "bottom: " << a << std::endl;
 
       LOGC("entering var (col): " << pivot_col
                                   << "; exiting var (col): " << exiting_var
@@ -278,13 +271,11 @@ private:
     for (size_t j = 0; j < old_rhs; ++j) {
       vars.non_basic_vars.insert(j);
     }
-    LOG(aux_tab)
     LOG(vars)
     Solution aux_solution = solveLP(aux_tab);
     LOG("auxiliary solution: : " << aux_solution)
     if (!aux_solution.success)
       return false;
-    LOG(aux_tab)
     LOG(vars)
 
     for (size_t i = 0; i < old_obj; ++i) {
@@ -302,7 +293,6 @@ private:
       size_t j = vars.row_basic.at(i);
       tab.rowAddition(old_obj, i, -tab.at(old_obj, j));
     }
-    LOG(tab)
     LOG(vars)
     LOGC("TODO\n", SIMPLEX_RED)
     // std::cout << vars;
@@ -380,7 +370,7 @@ private:
     m.rowMultiplication(pivot_row, 1 / pivot_element);
     LOG("pivot element: ")
     LOGC(m.at(pivot_row, pivot_col) << '\n', SIMPLEX_CYAN)
-    for (size_t i = 0; i < TM + 1; ++i) {
+    for (size_t i = 0; i < TM; ++i) {
       if (i == pivot_row)
         continue;
       F r = m.at(i, pivot_col) / m.at(pivot_row, pivot_col);

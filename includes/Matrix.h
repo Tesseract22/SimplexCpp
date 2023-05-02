@@ -40,6 +40,12 @@ public:
       get(i) = fill;
   }
 
+  Matrix(const Matrix &other) {
+    memcpy(arr_, other.arr_, ALIGN_COL(N) * M * sizeof(T));
+  }
+
+  //   ~Matrix() { delete[] arr_; }
+
   /**
    * retunrs a reference at the given location
    */
@@ -192,6 +198,7 @@ private:
     return row * ALIGN_COL(N) + col;
   }
   T arr_[M * ALIGN_COL(N)] = {0};
+  //   T *arr_ = new T[ALIGN_COL(N) * M]();
 };
 
 template <typename T, size_t M, size_t N>
