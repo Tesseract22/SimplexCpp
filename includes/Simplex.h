@@ -100,15 +100,8 @@ public:
     while (true) {
       s.iterations += 1;
       LOGC("Iterations: " << s.iterations << '\n', SIMPLEX_BLUE)
-      LOG(tab)
-      LOG(vars)
-      //   std::cout << tab;
-      //   std::cout << s << std::endl;
-      //   for (size_t j = 0; j < TN + TM + 2; ++j)
-      //     if (Approx::isApporxZero<F>(tab.at(TM, j), SIMP)) {
-      //       //   std::cout << "zeroing: " << j << '\n';
-      //       tab(TM, j) = 0;
-      //     }
+      //   LOG(tab)
+      //   LOG(vars)
 
       if (s.res == tab.at(TM - 1, TN - 1)) {
         is_cycling = true;
@@ -357,8 +350,6 @@ private:
     // @vector_multiplication
     for (size_t i = 0; i < TM - 1; ++i) {
       F ratio;
-      LOG(m.at(i, TN - 1) << ' ' << m.at(i, pivot_col) << '\n')
-      LOG(m.at(i, TN - 1) / m.at(i, pivot_col) << '\n')
       if (Approx::isDefGreaterThan<F>(m.at(i, pivot_col), 0,
                                       SIMPLEX_FLOAT_PRECISION) &&
           (ratio = m.at(i, TN - 1) / m.at(i, pivot_col)) >= 0 &&
@@ -368,6 +359,8 @@ private:
         // if (is_cycling)
         //   break;
       }
+      if (min == 0)
+        break;
     }
 
     LOG("Choosing pivot row ")

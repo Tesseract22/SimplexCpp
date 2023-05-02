@@ -1,4 +1,5 @@
 #pragma once
+#include "Approx.h"
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
@@ -115,7 +116,7 @@ public:
   template <class Q = T>
   typename std::enable_if<std::is_same<Q, float>::value, void>::type
   rowAddition(size_t dest_row, size_t other_row, T mul) {
-    if (mul == 0)
+    if (Approx::isApporxZero<Q>(mul, 1e-6))
       return;
     size_t j;
     __m128 mul_vec = _mm_set1_ps(mul);
