@@ -8,12 +8,4 @@
 #include <sstream>
 #include <string>
 using namespace std;
-int main() {
-  Matrix<double, 3, 7> a({
-      {1, 1, 1, 1, 1, 1, 1},
-      {2, 2, 2, 2, 2, 2, 2},
-      {3, 3, 3, 3, 3, 3, 3},
-  });
-  a.rowAddition(0, 1, 2);
-  cout << a;
-}
+int main() { cout << Approx::isApporxZero(1.38778e-17); }

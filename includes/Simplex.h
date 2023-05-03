@@ -11,6 +11,7 @@
 #include <ostream>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <vector>
 #define SIMPLEX_RED "\x1b[31m"
 #define SIMPLEX_GREEN "\x1b[32m"
@@ -117,14 +118,6 @@ public:
         LOG(lp_tab.at(TM - 1, j) << ' ')
       }
       LOG('\n')
-
-      for (size_t i = 0; i < TM; ++i) {
-        for (size_t j = 0; j < TN; ++j) {
-          if (lp_tab.at(i, j) >= 100000) {
-            LOG("???????? " << i << ' ' << j << ' ' << lp_tab.at(i, j) << '\n')
-          }
-        }
-      }
 
       s.res = lp_tab.at(TM - 1, TN - 1);
 
@@ -315,11 +308,44 @@ private:
       LOG(tab.at(M, j) << ' ')
     }
     LOG('\n')
+    // make sure there is no auxiliary variables in the basis
+    for (size_t i = 0; i < old_obj; ++i) {
+      size_t basic_var = vars.row_basic[i];
+      if (basic_var >= M + N) {
+        bool pivoted = false;
+        for (size_t non_basic_var : vars.non_basic_vars) {
+          if (non_basic_var < M + N &&
+              !Approx::isApporxZero<F>(aux_tab.at(i, non_basic_var),
+                                       SIMPLEX_FLOAT_PRECISION)) {
+            pivotMatrix(aux_tab, i, non_basic_var);
+            pivotVar(i, non_basic_var);
+            pivoted = true;
+            break;
+          }
+        }
+        if (!pivoted)
+          throw std::runtime_error(
+              "failed to find a pivot for auxiliary variable: " +
+              std::to_string(basic_var));
+      }
+    }
+    // make sure there is no auxiliary variables in the non-basic variables
+    auto non_basic_it = vars.non_basic_vars.begin();
+    while (non_basic_it != vars.non_basic_vars.end()) {
+      if (*non_basic_it >= M + N) {
+        vars.non_basic_vars.erase(non_basic_it++);
+      } else {
+        non_basic_it++;
+      }
+    }
     for (size_t i = 0; i < old_obj; ++i) {
       size_t j = vars.row_basic.at(i);
-      if (j < M + N)
-        throw std::runtime_error(
-            "the auxiliary variables is still in the basis. failed.");
+      if (j >= M + N) {
+        throw std::runtime_error("the auxiliary variable: " +
+                                 std::to_string(j) + " is still in the basis");
+      }
+      if (Approx::isApporxZero(-tab.at(old_obj, j), SIMPLEX_FLOAT_PRECISION))
+        continue;
       LOG("changing objective: " << i << ' ' << j << ' ' << tab.at(old_obj, j)
                                  << '\n')
       tab.rowAddition(old_obj, i, -tab.at(old_obj, j));
@@ -376,7 +402,10 @@ private:
       F ratio;
       if (Approx::isDefGreaterThan<F>(m.at(i, pivot_col), 0,
                                       SIMPLEX_FLOAT_PRECISION) &&
-          (ratio = m.at(i, TN - 1) / m.at(i, pivot_col)) >= 0 &&
+          (ratio =
+               Approx::isApporxZero(m.at(i, TN - 1), SIMPLEX_FLOAT_PRECISION)
+                   ? 0
+                   : (m.at(i, TN - 1) / m.at(i, pivot_col))) >= 0 &&
           Approx::isDefLessThan<F>(ratio, min, SIMPLEX_FLOAT_PRECISION)) {
         min = ratio;
         row = i;
@@ -405,11 +434,20 @@ private:
     LOG("pivot element: ")
     LOGC(m.at(pivot_row, pivot_col) << '\n', SIMPLEX_CYAN)
     for (size_t i = 0; i < TM; ++i) {
-      if (i == pivot_row || Approx::isApporxZero(m.at(pivot_row, pivot_col),
-                                                 SIMPLEX_FLOAT_PRECISION))
+      if (i == pivot_row ||
+          Approx::isApporxZero(m.at(i, pivot_col), SIMPLEX_FLOAT_PRECISION))
         continue;
       F r = m.at(i, pivot_col) / m.at(pivot_row, pivot_col);
+      if (i == 142) {
+        LOG("r: " << r << ", row: " << i << '\n');
+        LOG("rhs: " << m.at(i, TN - 1) << '\n');
+        LOG("pivot rhs: " << m.at(pivot_row, TN - 1) << '\n');
+      }
+
       m.rowAddition(i, pivot_row, -r);
+      if (i == 142) {
+        LOG("rhs: " << m.at(i, TN - 1) << '\n');
+      }
     }
     LOG('\n')
     //   m.debugPrint();

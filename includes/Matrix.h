@@ -8,6 +8,7 @@
 #include <initializer_list>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -57,9 +58,23 @@ public:
     return arr_[index(row, col)];
   }
 
-  inline T &get(size_t row, size_t col) { return arr_[index(row, col)]; }
+  inline T &get(size_t row, size_t col) {
+#if SIMPLEX_DEBUG
+    if (row >= M || col >= N)
+      throw std::runtime_error("row and col " + std::to_string(row) + " " +
+                               std::to_string(col) + " out of range");
+#endif
+    return arr_[index(row, col)];
+  }
 
-  const T &at(size_t row, size_t col) const { return arr_[index(row, col)]; }
+  const T &at(size_t row, size_t col) const {
+#if SIMPLEX_DEBUG
+    if (row >= M || col >= N)
+      throw std::runtime_error("row and col " + std::to_string(row) + " " +
+                               std::to_string(col) + " out of range");
+#endif
+    return arr_[index(row, col)];
+  }
 
   friend std::ostream &operator<<(std::ostream &stream,
                                   const Matrix<T, M, N> &s) {
