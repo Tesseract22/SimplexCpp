@@ -4,13 +4,15 @@
 #include "Matrix.h"
 #include <Approx.h>
 
+#include "macro.h"
+#include <cstddef>
 #include <map>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
 #define SIMPLEX_RED "\x1b[31m"
 #define SIMPLEX_GREEN "\x1b[32m"
 #define SIMPLEX_YELLOW "\x1b[33m"
@@ -122,10 +124,10 @@ public:
       } else {
         is_cycling = false;
       }
-      LOGC("last row of the tab: \n", SIMPLEX_YELLOW);
-      for (size_t j = 0; j < N + M + 1; ++j) {
-        LOG(lp_tab.at(TM - 1, j) << ' ')
-      }
+      //   LOGC("last row of the tab: \n", SIMPLEX_YELLOW);
+      //   for (size_t j = 0; j < N + M + 1; ++j) {
+      //     LOG(lp_tab.at(TM - 1, j) << ' ')
+      //   }
       LOG('\n')
 
       s.res = lp_tab.at(TM - 1, TN - 1);
@@ -287,10 +289,17 @@ private:
       vars.row_basic[i] = N + M + i;
     }
     // create the auxiliary objective
-
+    LOG("aux tab last row: \n")
+    for (size_t j = 0; j < aux_rhs; ++j) {
+      LOG(aux_tab.at(aux_obj, j) << ' ');
+    }
     for (size_t j = old_rhs; j < aux_rhs; ++j) {
       aux_tab.get(aux_obj, j) = 1;
       aux_tab.rowAddition(aux_obj, j - M - N, -1);
+    }
+    LOG("aux tab last row: \n")
+    for (size_t j = 0; j < aux_rhs; ++j) {
+      LOG(aux_tab.at(aux_obj, j) << ' ');
     }
     // the rest of the columns would be non-basic variables
     for (size_t j = 0; j < old_rhs; ++j) {

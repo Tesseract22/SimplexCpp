@@ -1,5 +1,6 @@
 #pragma once
 #include "Approx.h"
+#include "macro.h"
 #include <cstdio>
 #include <cstring>
 #include <immintrin.h>
@@ -8,7 +9,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-
 #ifndef __WASM__
 #define PADDING 8
 #define ALIGN_COL(N) (((N + PADDING - 1) / PADDING * PADDING))
@@ -40,8 +40,11 @@ public:
     for (size_t i = 0; i < ALIGN_COL(N) * M; ++i)
       get(i) = fill;
   }
-
   Matrix(const Matrix &other) {
+    memcpy(arr_, other.arr_, ALIGN_COL(N) * M * sizeof(T));
+  }
+
+  void operator=(const Matrix &other) {
     memcpy(arr_, other.arr_, ALIGN_COL(N) * M * sizeof(T));
   }
 
@@ -245,7 +248,7 @@ private:
 #ifndef __WASM__
   alignas(32) T arr_[M * ALIGN_COL(N)] = {0};
 #else
-  arr_[M * ALIGN_COL(N)] = {0};
+  T arr_[M * ALIGN_COL(N)] = {0};
 #endif
   //   T *arr_ = new T[ALIGN_COL(N) * M]();
 };

@@ -1,9 +1,10 @@
 #pragma once
 #include "Matrix.h"
+#include "macro.h"
 #include <cstdio>
+#include <cstring>
 #include <initializer_list>
 #include <stdexcept>
-
 template <typename T, size_t N> using Array = Matrix<T, 1, N>;
 template <typename T, size_t N> class Matrix<T, 1, N> {
 
@@ -19,6 +20,14 @@ public:
   Matrix(T fill) {
     for (size_t i = 0; i < ALIGN_COL(N); ++i)
       get(i) = fill;
+  }
+
+  void operator=(const Matrix &other) {
+    memcpy(arr_, other.arr_, ALIGN_COL(N) * sizeof(T));
+  }
+
+  Matrix(const Matrix &other) {
+    memcpy(arr_, other.arr_, ALIGN_COL(N) * sizeof(T));
   }
 
   T *data() { return arr_; }
