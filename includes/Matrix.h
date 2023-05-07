@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
 #define PADDING 8
 #define ALIGN_COL(N) (((N + PADDING - 1) / PADDING * PADDING))
 #else
@@ -144,7 +144,7 @@ public:
     if (Approx::isApporxZero<Q>(mul, 1e-6))
       return;
     size_t j = 0;
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
     __m128 mul_vec = _mm_set1_ps(mul);
     for (; j < N / 4 * 4; j += 4) {
       __m128 dest_vec = _mm_load_ps(arr_ + index(dest_row, j));
@@ -162,7 +162,7 @@ public:
   typename std::enable_if<std::is_same<Q, float>::value, void>::type
   rowMultiplication(size_t row, T factor) {
     size_t j = 0;
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
     __m128 mul_vec = _mm_set1_ps(factor);
     for (; j < N / 4 * 4; j += 4) {
 
@@ -182,7 +182,7 @@ public:
     if (mul == 0)
       return;
     size_t j = 0;
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
     __m256d mul_vec = _mm256_set1_pd(mul);
     for (; j < N / 4 * 4; j += 4) {
       __m256d dest_vec = _mm256_load_pd(arr_ + index(dest_row, j));
@@ -201,7 +201,7 @@ public:
   typename std::enable_if<std::is_same<Q, double>::value, void>::type
   rowMultiplication(size_t row, T factor) {
     size_t j = 0;
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
     __m256d mul_vec = _mm256_set1_pd(factor);
     for (; j < N / 4 * 4; j += 4) {
 
@@ -242,7 +242,7 @@ private:
   size_t index(size_t row, size_t col) const {
     return row * ALIGN_COL(N) + col;
   }
-#ifndef __EMSCRIPTEN__
+#ifndef __WASM__
   alignas(32) T arr_[M * ALIGN_COL(N)] = {0};
 #else
   arr_[M * ALIGN_COL(N)] = {0};
