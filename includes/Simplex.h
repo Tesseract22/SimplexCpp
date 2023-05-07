@@ -3,16 +3,14 @@
 #include "Array.h"
 #include "Matrix.h"
 #include <Approx.h>
-#include <cstddef>
-#include <fstream>
-#include <iostream>
-#include <limits>
+
 #include <map>
-#include <ostream>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#ifndef __EMSCRIPTEN__
 #define SIMPLEX_RED "\x1b[31m"
 #define SIMPLEX_GREEN "\x1b[32m"
 #define SIMPLEX_YELLOW "\x1b[33m"
@@ -20,12 +18,22 @@
 #define SIMPLEX_MAGENTA "\x1b[35m"
 #define SIMPLEX_CYAN "\x1b[36m"
 #define SIMPLEX_RESET "\x1b[0m"
+#else
+#define SIMPLEX_RED ""
+#define SIMPLEX_GREEN ""
+#define SIMPLEX_YELLOW ""
+#define SIMPLEX_BLUE ""
+#define SIMPLEX_MAGENTA ""
+#define SIMPLEX_CYAN ""
+#define SIMPLEX_RESET ""
+#endif
 
 #define SIMPLEX_REVERSE_SIGN(b) (b ? 1 : -1)
 #define SIMPLEX_DEFAULT_LEQ_ARR(M) Array<bool, M>(true)
 #define SIMPLEX_DEFAULT_GEQ_ARR(M) Array<bool, M>(false)
 
 #ifdef SIMPLEX_DEBUG
+#include <iostream>
 #define LOG(msg) std::cout << msg;
 #define LOGC(msg, color) std::cout << color << msg << SIMPLEX_RESET;
 
@@ -37,6 +45,7 @@
   do {                                                                         \
   } while (0);
 #endif
+#define SIMPLEX_FLOAT_PRECISION 1e-7
 typedef double F;
 template <size_t M, size_t N> class Simplex {
 public:

@@ -1,4 +1,4 @@
-CXX=g++ -std=c++2a -mavx 
+CXX=g++ -std=c++2a -mavx
 INCLUDES=-Iincludes
 TEST_UTILS=-Itests
 DEBUG=-g -O0 -DSIMPLEX_DEBUG

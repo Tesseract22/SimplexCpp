@@ -8,4 +8,10 @@
 #include <sstream>
 #include <string>
 using namespace std;
-int main() { cout << Approx::isApporxZero(1.38778e-17); }
+int main() {
+  Matrix<float, 2, 3> f;
+  f.save("a");
+
+  //   Matrix<float, 2, 3> f2("a");
+  //   cout << f2;
+}

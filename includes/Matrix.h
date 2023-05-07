@@ -1,20 +1,20 @@
 #pragma once
 #include "Approx.h"
-#include <cerrno>
-#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <immintrin.h>
 #include <initializer_list>
-#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <vector>
-#include <xmmintrin.h>
+
+#ifndef __EMSCRIPTEN__
 #define PADDING 8
 #define ALIGN_COL(N) (((N + PADDING - 1) / PADDING * PADDING))
+#else
+#define ALIGN_COL(N) N
+#endif
 
 // ssize_t readData(FILE* f, void* buffer) {
 //   const static block_size = 1024;
@@ -44,6 +44,10 @@ public:
   Matrix(const Matrix &other) {
     memcpy(arr_, other.arr_, ALIGN_COL(N) * M * sizeof(T));
   }
+
+  T *data() { return arr_; }
+
+  const size_t spaceUsed = M * ALIGN_COL(N);
 
   //   ~Matrix() { delete[] arr_; }
 
@@ -139,14 +143,16 @@ public:
   rowAddition(size_t dest_row, size_t other_row, T mul) {
     if (Approx::isApporxZero<Q>(mul, 1e-6))
       return;
-    size_t j;
+    size_t j = 0;
+#ifndef __EMSCRIPTEN__
     __m128 mul_vec = _mm_set1_ps(mul);
-    for (j = 0; j < N / 4 * 4; j += 4) {
+    for (; j < N / 4 * 4; j += 4) {
       __m128 dest_vec = _mm_load_ps(arr_ + index(dest_row, j));
       __m128 other_vec = _mm_load_ps(arr_ + index(other_row, j));
       __m128 result_vec = _mm_add_ps(dest_vec, _mm_mul_ps(other_vec, mul_vec));
       _mm_store_ps(arr_ + index(dest_row, j), result_vec);
     }
+#endif
     for (; j < N; ++j) {
       arr_[index(dest_row, j)] += arr_[index(other_row, j)] * mul;
     }
@@ -155,14 +161,16 @@ public:
   template <class Q = T>
   typename std::enable_if<std::is_same<Q, float>::value, void>::type
   rowMultiplication(size_t row, T factor) {
-    size_t j;
+    size_t j = 0;
+#ifndef __EMSCRIPTEN__
     __m128 mul_vec = _mm_set1_ps(factor);
-    for (j = 0; j < N / 4 * 4; j += 4) {
+    for (; j < N / 4 * 4; j += 4) {
 
       __m128 result_vec =
           _mm_mul_ps(_mm_load_ps(arr_ + index(row, j)), mul_vec);
       _mm_store_ps(arr_ + index(row, j), result_vec);
     }
+#endif
     for (; j < N; ++j) {
       arr_[index(row, j)] *= factor;
     }
@@ -173,15 +181,17 @@ public:
   rowAddition(size_t dest_row, size_t other_row, T mul) {
     if (mul == 0)
       return;
-    size_t j;
+    size_t j = 0;
+#ifndef __EMSCRIPTEN__
     __m256d mul_vec = _mm256_set1_pd(mul);
-    for (j = 0; j < N / 4 * 4; j += 4) {
+    for (; j < N / 4 * 4; j += 4) {
       __m256d dest_vec = _mm256_load_pd(arr_ + index(dest_row, j));
       __m256d other_vec = _mm256_load_pd(arr_ + index(other_row, j));
       __m256d result_vec =
           _mm256_add_pd(dest_vec, _mm256_mul_pd(other_vec, mul_vec));
       _mm256_store_pd(arr_ + index(dest_row, j), result_vec);
     }
+#endif
     for (; j < N; ++j) {
       arr_[index(dest_row, j)] += arr_[index(other_row, j)] * mul;
     }
@@ -190,20 +200,41 @@ public:
   template <class Q = T>
   typename std::enable_if<std::is_same<Q, double>::value, void>::type
   rowMultiplication(size_t row, T factor) {
-    size_t j;
+    size_t j = 0;
+#ifndef __EMSCRIPTEN__
     __m256d mul_vec = _mm256_set1_pd(factor);
-    for (j = 0; j < N / 4 * 4; j += 4) {
+    for (; j < N / 4 * 4; j += 4) {
 
       __m256d result_vec =
           _mm256_mul_pd(_mm256_load_pd(arr_ + index(row, j)), mul_vec);
       _mm256_store_pd(arr_ + index(row, j), result_vec);
     }
+#endif
     for (; j < N; ++j) {
       arr_[index(row, j)] *= factor;
     }
   }
 
-  size_t save(const std::string &path);
+  template <class Q = T>
+  typename std::enable_if<std::is_fundamental<Q>::value, size_t>::type
+  save(const std::string &path) {
+    FILE *f = fopen(path.data(), "wb+");
+    if (!f)
+      throw std::runtime_error("cannot open file: " + path);
+    size_t bytes_to_write = M * ALIGN_COL(N) * sizeof(T);
+    size_t bytes_written = 0;
+    ssize_t bytes;
+    while (bytes_written < bytes_to_write) {
+      bytes = fwrite((char *)arr_ + bytes_written, 1,
+                     bytes_to_write - bytes_written, f);
+      if (bytes < 0)
+        throw std::runtime_error("cannot write to file: " + path);
+      bytes_written += bytes;
+    }
+    if (f)
+      fclose(f);
+    return bytes_written;
+  }
   Array<std::string, N> *col_header = nullptr;
   Array<std::string, M> *row_header = nullptr;
 
@@ -211,7 +242,11 @@ private:
   size_t index(size_t row, size_t col) const {
     return row * ALIGN_COL(N) + col;
   }
+#ifndef __EMSCRIPTEN__
   alignas(32) T arr_[M * ALIGN_COL(N)] = {0};
+#else
+  arr_[M * ALIGN_COL(N)] = {0};
+#endif
   //   T *arr_ = new T[ALIGN_COL(N) * M]();
 };
 
@@ -235,25 +270,6 @@ Matrix<T, M, N>::Matrix(const std::string &path) {
 
   if (f)
     fclose(f);
-}
-template <typename T, size_t M, size_t N>
-size_t Matrix<T, M, N>::save(const std::string &path) {
-  FILE *f = fopen(path.data(), "wb+");
-  if (!f)
-    throw std::runtime_error("cannot open file: " + path);
-  size_t bytes_to_write = M * ALIGN_COL(N) * sizeof(T);
-  size_t bytes_written = 0;
-  ssize_t bytes;
-  while (bytes_written < bytes_to_write) {
-    bytes = fwrite((char *)arr_ + bytes_written, 1,
-                   bytes_to_write - bytes_written, f);
-    if (bytes < 0)
-      throw std::runtime_error("cannot write to file: " + path);
-    bytes_written += bytes;
-  }
-  if (f)
-    fclose(f);
-  return bytes_written;
 }
 
 template <typename T, size_t M, size_t N>

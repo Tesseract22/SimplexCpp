@@ -1,7 +1,5 @@
 #pragma once
 #include "Matrix.h"
-#include <cerrno>
-#include <cstddef>
 #include <cstdio>
 #include <initializer_list>
 #include <stdexcept>
@@ -22,6 +20,8 @@ public:
     for (size_t i = 0; i < ALIGN_COL(N); ++i)
       get(i) = fill;
   }
+
+  T *data() { return arr_; }
 
   //   Matrix operator=(std::initializer_list<T> list);
 
@@ -71,41 +71,42 @@ public:
     return stream;
   }
 
-  template <class Q = T>
-  typename std::enable_if<std::is_same<Q, float>::value, void>::
-      type static arrayAddition(Array<T, N> &dest, const Array<T, N> &source,
-                                T mul) {
-    if (mul == 0)
-      return;
-    size_t j;
-    __m128 mul_vec = _mm_set1_ps(mul);
-    std::cout << ALIGN_COL(N) << std::endl;
-    for (j = 0; j < N / 4 * 4; j += 4) {
-      __m128 dest_vec = _mm_load_ps(dest.arr_ + j);
-      __m128 other_vec = _mm_load_ps(source.arr_ + j);
-      __m128 result_vec = _mm_add_ps(dest_vec, _mm_mul_ps(other_vec, mul_vec));
-      _mm_store_ps(dest.arr_ + j, result_vec);
-    }
-    for (; j < N; ++j) {
-      // std::cout << j << std::endl;
-      // std::cout << source.arr_[j] << std::endl;
-      dest.arr_[j] += source.arr_[j] * mul;
-    }
-  }
-  template <class Q = T>
-  typename std::enable_if<std::is_same<Q, float>::value, void>::type
-  arrayMultiplication(T factor) {
-    size_t j;
-    __m128 mul_vec = _mm_set1_ps(factor);
-    for (j = 0; j < N / 4 * 4; j += 4) {
+  //   template <class Q = T>
+  //   typename std::enable_if<std::is_same<Q, float>::value, void>::
+  //       type static arrayAddition(Array<T, N> &dest, const Array<T, N>
+  //       &source,
+  //                                 T mul) {
+  //     if (mul == 0)
+  //       return;
+  //     size_t j;
+  //     __m128 mul_vec = _mm_set1_ps(mul);
+  //     std::cout << ALIGN_COL(N) << std::endl;
+  //     for (j = 0; j < N / 4 * 4; j += 4) {
+  //       __m128 dest_vec = _mm_load_ps(dest.arr_ + j);
+  //       __m128 other_vec = _mm_load_ps(source.arr_ + j);
+  //       __m128 result_vec = _mm_add_ps(dest_vec, _mm_mul_ps(other_vec,
+  //       mul_vec)); _mm_store_ps(dest.arr_ + j, result_vec);
+  //     }
+  //     for (; j < N; ++j) {
+  //       // std::cout << j << std::endl;
+  //       // std::cout << source.arr_[j] << std::endl;
+  //       dest.arr_[j] += source.arr_[j] * mul;
+  //     }
+  //   }
+  //   template <class Q = T>
+  //   typename std::enable_if<std::is_same<Q, float>::value, void>::type
+  //   arrayMultiplication(T factor) {
+  //     size_t j;
+  //     __m128 mul_vec = _mm_set1_ps(factor);
+  //     for (j = 0; j < N / 4 * 4; j += 4) {
 
-      __m128 result_vec = _mm_mul_ps(_mm_load_ps(arr_ + j), mul_vec);
-      _mm_store_ps(arr_ + j, result_vec);
-    }
-    for (; j < N; ++j) {
-      arr_[j] *= factor;
-    }
-  }
+  //       __m128 result_vec = _mm_mul_ps(_mm_load_ps(arr_ + j), mul_vec);
+  //       _mm_store_ps(arr_ + j, result_vec);
+  //     }
+  //     for (; j < N; ++j) {
+  //       arr_[j] *= factor;
+  //     }
+  //   }
 
   Array<std::string, N> *header = nullptr;
   size_t save(const std::string &path);

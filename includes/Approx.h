@@ -1,10 +1,7 @@
 
 #pragma once
 #include <cmath>
-#include <iostream>
 #include <limits>
-#include <math.h>
-#define SIMPLEX_FLOAT_PRECISION 1e-7
 
 namespace Approx {
 template <typename TReal>
